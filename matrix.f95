@@ -5,6 +5,22 @@
 
     contains
 
+        function ID_MATRIX(n) result (A)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n)
+
+            integer :: j
+
+            A(:, :) = 0.0D0
+
+            do j = 1, n
+                A(j, j) = 1.0D0
+            end do
+
+        end function
+            
         subroutine LU_DECOMP(A, n)
             implicit none
 
@@ -119,12 +135,27 @@
         A(3,2) = 0.0D0
         A(3,3) = 1.0D0
 
+!       Print Matrix Name
+        write(*, *) 'A:'
+
 !       Print Matrix
         call print_matrix(A, m, n)
 
 !       Print its Determinant
 
         write(*, *) 'Matrix Det:', det(A, n)
+
+        write(*, *) ''
+
+!       Print Matrix Name
+        write(*, *) 'I:'
+
+!       Print Matrix
+        call print_matrix(ID_MATRIX(n), n, n)
+
+!       Print its Determinant
+
+        write(*, *) 'Matrix Det:', det(ID_MATRIX(n), n)
 
         write(*, *) ''
 
