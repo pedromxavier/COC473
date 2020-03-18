@@ -5,8 +5,22 @@
 
     contains
 
-        subroutine LU_DECOMP()
+        subroutine LU_DECOMP(A, n)
             implicit none
+
+            integer :: n
+            double precision :: A(n, n)
+            double precision :: p, t
+
+            integer i, j
+
+        end subroutine
+
+        subroutine CHOLESKY_DECOMP(A, n)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n)
 
         end subroutine
 
@@ -50,6 +64,30 @@
             end do
         end subroutine
 
+        recursive function det(A, n) result (D)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n)
+            double precision :: X(n-1, n-1)
+
+            integer :: i, j, k
+            double precision :: D
+
+            if (n == 2) then
+                D = A(1, 1) * A(2, 2) - A(1, 2) * A(2, 1)
+            else
+                D = 0.0D0
+                do i = 1, n
+                    X(:,  :i-1) = A(2:,    :i-1)
+                    X(:, i:   ) = A(2:, i+1:   )
+
+                    D = det(X, n-1) * A(1, i) + D
+                end do
+            end if
+                
+        end function
+
     end module Matrix
 
 !   Tests
@@ -69,17 +107,24 @@
         integer :: i, j
 
 !       Define matrix
-        do i = 1, m
-            do j = 1, n
-                if (i == j) then
-                    A(i, j) = -1.0D0
-                else
-                    A(i, j) = 0.0D0
-                end if
-            end do
-        end do
+        A(1,1) = 1.0D0
+        A(1,2) = 2.0D0
+        A(1,3) = 4.0D0
+
+        A(2,1) = 0.0D0
+        A(2,2) = 1.0D0
+        A(2,3) = 2.0D0
+
+        A(3,1) = 1.0D0
+        A(3,2) = 0.0D0
+        A(3,3) = 1.0D0
+
 !       Print Matrix
         call print_matrix(A, m, n)
+
+!       Print its Determinant
+
+        write(*, *) 'Matrix Det:', det(A, n)
 
         write(*, *) ''
 
