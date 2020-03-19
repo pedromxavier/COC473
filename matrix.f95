@@ -21,14 +21,43 @@
 
         end function
             
-        subroutine LU_DECOMP(A, n)
+        subroutine LU_DECOMP(A, b, n, L, U)
             implicit none
 
             integer :: n
-            double precision :: A(n, n)
-            double precision :: p, t
+            double precision :: A(n, n), b(n), L(n, n), U(n, n)
+            double precision :: s
 
-            integer i, j
+            integer :: i, j, k
+
+!           Lower-Triangular Matrix
+            L(:, :) = 0.0D0
+
+!           Upper-Triangular Matrix
+            U(:, :) = 0.0D0
+
+            do i = 1, n
+!               Upper-Triangular
+                do k = 1, n
+                    s = 0.0D0
+                    do j = 1, i-1
+                        s = s + L(i, j) * U(j, k)
+                    end do
+                    U(i, k) = A(i, k) - s
+                end do
+!               Lower-Triangular
+                do k = 1, n
+                    if (i == k) then
+                        L(i, i) = 1.0D0
+                    else
+                        s = 0.0D0
+                        do j = 1, i-1
+                            s = s + L(k, j) * U(j, i)
+                        end do
+                        L(k, i) = (A(k, i) - s) / U(i, i)
+                    end if
+                end do
+            end do
 
         end subroutine
 
@@ -113,12 +142,11 @@
 
         implicit none
 
-        integer, parameter :: m = 3
         integer, parameter :: n = 3
 
-        double precision :: A(m, n)
+        double precision :: A(n, n), L(n, n), U(n, n), I(n, n)
 
-        double precision :: x(m)
+        double precision :: x(n)
 
         integer :: i, j
 
@@ -147,6 +175,8 @@
 
         write(*, *) ''
 
+!       Define Identity Matrix
+
 !       Print Matrix Name
         write(*, *) 'I:'
 
@@ -166,5 +196,9 @@
 
 !       Print Vector
         call print_vector(x, m)
+
+!       LU - Decomposition
+
+        
 
     end program matrix_test
