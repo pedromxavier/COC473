@@ -18,10 +18,9 @@
             read(33, *) n
             allocate(A(m, n))
 
-            do i = 1, n
+            do i = 1, m
                 read(33,*) A(i,:)
-                write(*,*) A(i,:)
-            enddo
+            end do
 
             close(33)
         end subroutine
@@ -34,11 +33,17 @@
 
             integer :: j
 
-            A(:, :) = 0.0D0
+            A(:, :) = 1.0D0
 
             do j = 1, n
                 A(j, j) = 1.0D0
             end do
+
+            call warn('=======================================')
+            call print_matrix(A, n, n)
+            call warn('=======================================')
+
+            return
 
         end function
 
@@ -100,7 +105,7 @@
         subroutine ILL_COND()
             implicit none
 
-            print *, ''//achar(27)//'[95m Matriz mal-condicionada '//achar(27)//'[0m.'
+            call warn('Aviso: Matriz mal-condicionada.')
         end subroutine
 
         function CHOLESKY_COND(A, n) result (x)
@@ -147,18 +152,10 @@
             integer :: n
             double precision A(n, n)
 
-            integer :: i, j
             logical :: x
 
-            do j = 1, n
-                do i = 1, j
-                    if (A(i, j) < 0.01D0) then
-                        x = .FALSE.
-                        return
-                    end if 
-                end do
-            end do
-            x = .TRUE.
+            x = POSITIVE_DEFINITE(A, n)
+
             return
         end function
 
@@ -187,6 +184,7 @@
 
             integer :: n
             double precision :: A(n, n)
+
             double precision :: P(n, n)
 
             integer :: j, k
@@ -203,68 +201,98 @@
             return
         end function
 
-        function PLU_DECOMP(A, P, n) result (X)
+        function PLU_DECOMP(A, P, L, U, n) result (x)
             implicit none
 
             integer :: n
-            double precision :: P(n, n), A(n, n), PA(n, n), X(n, n)
+            double precision :: A(n,n), P(n,n), L(n,n), U(n,n)
 
-            if (.NOT. PLU_COND(A, n)) then
-                call ILL_COND()
-                return
-            end if
+            logical :: x
 
 !           Permutation Matrix
             P = PIVOT_MATRIX(A, n)
 
-!           Row-Swapped Matrix
-            PA = matmul(P, A)
-
-            X = LU_DECOMP(PA, n)
+!           Decomposition over Row-Swapped Matrix
+            x = LU_DECOMP(matmul(P, A), L, U, n)
             return
-
         end function
             
-        function LU_DECOMP(A, n) result (X)
+        function LU_DECOMP(A, L, U, n) result (x)
             implicit none
 
             integer :: n
-            double precision :: A(n, n), X(n, n)
+            double precision :: A(n, n), L(n, n), U(n,n), M(n, n)
+
+            logical :: x
 
             integer :: i, j, k
 
 !           Results Matrix
-            X(:, :) = A(:, :)
+            M(:, :) = A(:, :)
 
             if (.NOT. LU_COND(A, n)) then
                 call ILL_COND()
+                x = .FALSE.
                 return
             end if
 
             do k = 1, n-1
                 do i = k+1, n
-                    X(i, k) = X(i, k) / X(k, k)
+                    M(i, k) = M(i, k) / M(k, k)
                 end do
                 
                 do j = k+1, n
                     do i = k+1, n
-                        X(i, j) = X(i, j) - X(i, k) * A(k, j)
+                        M(i, j) = M(i, j) - M(i, k) * M(k, j)
                     end do
                 end do
             end do
 
+            call LU_MATRIX(M, L, U, n)
+
+            x = .TRUE.
             return
 
         end function
 
-        subroutine CHOLESKY_DECOMP(A, n)
+        function CHOLESKY_DECOMP(A, L, n) result (x)
             implicit none
 
             integer :: n
-            double precision :: A(n, n)
+            double precision :: A(n, n), L(n, n)
 
-            
+            logical :: x
 
+            integer :: i, j
+
+            if (.NOT. CHOLESKY_COND(A, n)) then
+                call ILL_COND()
+                x = .FALSE.
+                return
+            end if
+
+            do i = 1, n
+                L(i, i) = sqrt(A(i, i) - sum(L(i, :i-1) * L(i, :i-1)))
+                do j = 1 + 1, n
+                    L(j, i) = (A(i, j) - sum(L(i, :i-1) * L(j, :i-1))) / L(i, i)
+                end do
+            end do
+
+            x = .TRUE.
+            return
+
+        end function
+
+        subroutine warn(text)
+            implicit none
+            character(len=*) :: text
+            write (*, *) ''//achar(27)//'[31m'//text//''//achar(27)//'[0m'
+        end subroutine
+
+        subroutine info(text)
+            implicit none
+            character(len=*) :: text
+            write (*, *) ''//achar(27)//'[32m'//text//''//achar(27)//'[0m'
         end subroutine
 
         subroutine print_matrix(A, m, n)
@@ -275,7 +303,7 @@
 
             integer :: i, j
 
-20          format('|', F10.5, ' ')
+20          format(' |', F10.5, ' ')
 21          format(F10.5, '|')
 22          format(F10.5, ' ')
 
@@ -334,12 +362,15 @@
             integer :: i
             double precision :: d, s
 
-            if (n == 2) then
+            if (n == 1) then
+                d = A(1, 1)
+            elseif (n == 2) then
                 d = A(1, 1) * A(2, 2) - A(1, 2) * A(2, 1)
             else
                 d = 0.0D0
                 s = 1.0D0
                 do i = 1, n
+!                   Compute submatrix X
                     X(:,  :i-1) = A(2:,    :i-1)
                     X(:, i:   ) = A(2:, i+1:   )
 
@@ -365,22 +396,116 @@
 
         integer :: m, n
 
+        character(len=32) :: fname
+
 !       Matrices
         double precision, allocatable :: A(:, :)
 
+!       Determinant
+        double precision :: d
+
+!       For LU decomposition & Cholesky also
+        double precision, allocatable :: L(:, :), U(:, :)
+
+!       For PLU decomposition
+        double precision, allocatable :: P(:, :)
+
 !       Vectors
-!       double precision :: b(n)
+!       double precision, allocatable :: b(:)
 
 !       Define matrix
-        call read_matrix('matrix.txt', A, m, n)
+        if (iargc() == 1) then
+            call getarg(1, fname)
+        elseif (iargc() > 1) then
+            goto 91
+        else
+            fname = 'matrix.txt'
+        end if
+
+        call read_matrix(fname, A, m, n)
+
+        if (m /= n) then
+            goto 90
+        end if
 
 !       Print Matrix Name
         write(*, *) 'A:'
 
 !       Print Matrix
-        call print_matrix(A, n, n)
+        call print_matrix(A, m, n)
 
 !       Print its Determinant
+        d = DET(A, n)
+        write(*, *) 'Matrix Det:', d
 
-        write(*, *) 'Matrix Det:', DET(A, n)
+        if (d == 0.0D0) then
+            goto 92
+        endif
+
+!       Decomposition Time!
+!       Allocate Result Matrices
+        allocate(P(n, n))
+        allocate(L(n, n))
+        allocate(U(n, n))
+
+!       Try LU Decomposition
+       call info(':: Decomposição LU (sem pivoteamento) ::')
+        if (.NOT. LU_DECOMP(A, L, U, n)) then
+            goto 81
+        end if
+
+        write(*, *) 'A:'
+        call print_matrix(A, n, n)
+        
+        write(*, *) 'L:'
+        call print_matrix(L, n, n)
+
+        write(*, *) 'U:'
+        call print_matrix(U, n, n)
+
+!       Try PLU Decomposition
+81      call info(':: Decomposição PLU (com pivoteamento) ::')
+        if (.NOT. PLU_DECOMP(A, P, L, U, n)) then
+            goto 82
+        end if
+
+        write(*, *) 'A:'
+        call print_matrix(A, n, n)
+
+        write(*, *) 'P:'
+        call print_matrix(P, n, n)
+        
+        write(*, *) 'L:'
+        call print_matrix(L, n, n)
+
+        write(*, *) 'U:'
+        call print_matrix(U, n, n)
+
+!       Try Cholesky Decomposition
+82      call info(':: Decomposição de Cholesky ::')
+        if (.NOT. CHOLESKY_DECOMP(A, L, n)) then
+            goto 85
+        end if
+
+        write(*, *) 'A:'
+        call print_matrix(A, n, n)
+
+        write(*, *) 'L:'
+        call print_matrix(L, n, n)
+
+85      call info('Sucesso!')
+        deallocate(P)
+        deallocate(L)
+        deallocate(U)
+        goto 100
+
+90      call warn('Essa matriz não é quadrada, logo o programa não faz sentido.')
+        goto 100
+91      call warn('Parâmetros em excesso: O programa espera apenas o nome do arquivo da matriz.')
+        goto 100
+92      call warn('O Determinante é 0! Os métodos não se aplicam nesse caso.')
+        goto 100
+
+100     stop
+
     end program matrix_test
