@@ -1,17 +1,17 @@
 # COC473 - Álgebra Linear Computacional @ ECI/UFRJ
-#Makefile
+# Macros
+f95c = gfortran
+args = -O2 -ffpe-summary=none
+# Makefile
 matrix: matrixlib.o main.o
-	gfortran -o matrix matrixlib.o main.o
+	$(f95c) -o matrix $(args) matrixlib.o main.o
 
-matrixlib.mod: matrixlib.o matrixlib.f95
-	gfortran -c matrixlib.f95
+%.mod: %.o %.f95
+	$(f95c) -c $(args) $<
 
-matrixlib.o: matrixlib.f95
-	gfortran -c matrixlib.f95
-
-main.o: matrixlib.mod main.f95
-	gfortran -c main.f95
+%.o: %.f95
+	$(f95c) -c $(args) $<
 
 clean:
 	rm matrixlib.o main.o
-#End Makefile
+# End Makefile

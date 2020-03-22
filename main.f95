@@ -3,58 +3,68 @@ program main
 
     implicit none
 
-!       Command-line Args
+!   Command-line Args
     integer :: argc
 
     character(len=32) :: matrix_fname, vector_fname
 
-!       Matrices
+!   Matrices
     integer :: m, n
-
     double precision, allocatable :: A(:, :)
 
-!       Determinant
+!   Determinant
     double precision :: d
 
-!       For LU decomposition & Cholesky also
+!   For LU decomposition & Cholesky also
     double precision, allocatable :: L(:, :), U(:, :)
 
-!       For PLU decomposition
+!   For PLU decomposition
     double precision, allocatable :: P(:, :)
 
-!       Vectors
-!       double precision, allocatable :: b(:)
+!   Vectors
+    integer :: t
+    double precision, allocatable :: b(:)
 
-!       Get Command-Line Args
+!   Get Command-Line Args
+    matrix_fname = 'matrix.txt'
+    vector_fname = 'vector.txt'
+
     if (argc == 1) then
         call getarg(1, matrix_fname)
     elseif(argc == 2) then
         call getarg(1, matrix_fname)
         call getarg(2, vector_fname)
     elseif (argc > 2) then
-        goto 91
-    else
-        matrix_fname = 'matrix.txt'
+        goto 92
     end if
 
     call read_matrix(matrix_fname, A, m, n)
+    call read_vector(vector_fname, b, t)
 
     if (m /= n) then
         goto 90
+    elseif (m /= t) then
+        goto 91
     end if
 
-!       Print Matrix Name
-    write(*, *) 'A:'
 
-!       Print Matrix
+
+!   Print Matrix
+!   Print Matrix Name
+    write(*, *) 'A:'
     call print_matrix(A, m, n)
 
-!       Print its Determinant
+!   Print Matrix
+!   Print Matrix Name
+    write(*, *) 'b:'
+    call print_vector(b, t)
+
+!   Print its Determinant
     d = DET(A, n)
     write(*, *) 'Matrix Det:', d
 
     if (d == 0.0D0) then
-        goto 92
+        goto 93
     endif
 
 !       Decomposition Time!
@@ -108,17 +118,21 @@ program main
     write(*, *) 'L:'
     call print_matrix(L, n, n)
 
-85      call info('Sucesso!')
+85  call info('Sucesso!')
+    deallocate(A)
     deallocate(P)
     deallocate(L)
     deallocate(U)
+    deallocate(b)
     goto 100
 
-90      call warn('Essa matriz não é quadrada, logo o programa não faz sentido.')
+90  call error('Essa matriz não é quadrada! Assim o programa não faz sentido.')
     goto 100
-91      call warn('Parâmetros em excesso: O programa espera apenas o nome do arquivo da matriz.')
+91  call error('A matriz `A` e o vetor `b` não possuem a mesma dimensão. Não tem como fazer Ax = b!')
     goto 100
-92      call warn('O Determinante é 0! Os métodos não se aplicam nesse caso.')
+92  call error('Parâmetros em excesso: O programa espera apenas o nome do arquivo da matriz.')
+    goto 100
+93  call error('O Determinante é 0! Os métodos não se aplicam nesse caso.')
     goto 100
 
 100     stop
