@@ -33,15 +33,11 @@
 
             integer :: j
 
-            A(:, :) = 1.0D0
+            A(:, :) = 0.0D0
 
             do j = 1, n
                 A(j, j) = 1.0D0
             end do
-
-            call warn('=======================================')
-            call print_matrix(A, n, n)
-            call warn('=======================================')
 
             return
 
@@ -381,10 +377,6 @@
                 
         end function
 
-!       ================== TEST FUNCTIONS BELOW ================
-
-
-
     end module Matrix
 
 !   Tests
@@ -394,11 +386,14 @@
 
         implicit none
 
-        integer :: m, n
+!       Command-line Args
+        integer :: argc
 
-        character(len=32) :: fname
+        character(len=32) :: matrix_fname, vector_fname
 
 !       Matrices
+        integer :: m, n
+
         double precision, allocatable :: A(:, :)
 
 !       Determinant
@@ -413,16 +408,19 @@
 !       Vectors
 !       double precision, allocatable :: b(:)
 
-!       Define matrix
-        if (iargc() == 1) then
-            call getarg(1, fname)
-        elseif (iargc() > 1) then
+!       Get Command-Line Args
+        if (argc == 1) then
+            call getarg(1, matrix_fname)
+        elseif(argc == 2) then
+            call getarg(1, matrix_fname)
+            call getarg(2, vector_fname)
+        elseif (argc > 2) then
             goto 91
         else
-            fname = 'matrix.txt'
+            matrix_fname = 'matrix.txt'
         end if
 
-        call read_matrix(fname, A, m, n)
+        call read_matrix(matrix_fname, A, m, n)
 
         if (m /= n) then
             goto 90
