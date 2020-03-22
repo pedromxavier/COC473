@@ -13,5 +13,5 @@ matrix: matrixlib.o main.o
 	$(f95c) -c $(args) $<
 
 clean:
-	rm matrixlib.o main.o
+	rm *.o *.mod matrix
 # End Makefile
