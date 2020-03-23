@@ -15,6 +15,9 @@ program main
 !   Determinant
     double precision :: d
 
+!   Spectral Radius
+    double precision :: r
+
 !   For LU decomposition & Cholesky also
     double precision, allocatable :: L(:, :), U(:, :)
 
@@ -24,6 +27,10 @@ program main
 !   Vectors
     integer :: t
     double precision, allocatable :: b(:)
+    double precision, allocatable :: x(:)
+
+!   Error
+    double precision :: e
 
 !   Get Command-Line Args
     matrix_fname = 'matrix.txt'
@@ -47,8 +54,6 @@ program main
         goto 91
     end if
 
-
-
 !   Print Matrix
 !   Print Matrix Name
     write(*, *) 'A:'
@@ -60,21 +65,26 @@ program main
     call print_vector(b, t)
 
 !   Print its Determinant
-    d = DET(A, n)
-    write(*, *) 'Matrix Det:', d
+    d = det(A, n)
+    write(*, *) 'Matrix Determinant = ', d
+
+!   Print its Spectral Radius
+    r = spectral_radius(A, n, 1000)
+    write(*, *) 'Spectral Radius = ', r
+
 
     if (d == 0.0D0) then
         goto 93
     endif
 
-!       Decomposition Time!
-!       Allocate Result Matrices
+!   Decomposition Time!
+!   Allocate Result Matrices
     allocate(P(n, n))
     allocate(L(n, n))
     allocate(U(n, n))
 
-!       Try LU Decomposition
-   call info(':: Decomposição LU (sem pivoteamento) ::')
+!   Try LU Decomposition
+    call info(':: Decomposição LU (sem pivoteamento) ::')
     if (.NOT. LU_DECOMP(A, L, U, n)) then
         goto 81
     end if
@@ -88,8 +98,8 @@ program main
     write(*, *) 'U:'
     call print_matrix(U, n, n)
 
-!       Try PLU Decomposition
-81      call info(':: Decomposição PLU (com pivoteamento) ::')
+!   Try PLU Decomposition
+81  call info(':: Decomposição PLU (com pivoteamento) ::')
     if (.NOT. PLU_DECOMP(A, P, L, U, n)) then
         goto 82
     end if
@@ -106,10 +116,10 @@ program main
     write(*, *) 'U:'
     call print_matrix(U, n, n)
 
-!       Try Cholesky Decomposition
-82      call info(':: Decomposição de Cholesky ::')
+!   Try Cholesky Decomposition
+82  call info(':: Decomposição de Cholesky ::')
     if (.NOT. CHOLESKY_DECOMP(A, L, n)) then
-        goto 85
+        goto 83
     end if
 
     write(*, *) 'A:'
@@ -117,6 +127,27 @@ program main
 
     write(*, *) 'L:'
     call print_matrix(L, n, n)
+
+!   Linear System Time!
+!   Allocate Result Vectors
+    allocate(x(n))
+
+!   Try Jacobi Method
+83  call info(':: Método de Jacobi ::')
+    if (.NOT. Jacobi(A, x, b, e, n)) then
+        goto 85
+    end if
+
+    write(*, *) 'A:'
+    call print_matrix(A, n, n)
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
+
+    write(*, *) 'b:'
+    call print_vector(b, n)
+
+    print *, 'e = ', e
 
 85  call info('Sucesso!')
     deallocate(A)

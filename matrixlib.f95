@@ -2,6 +2,7 @@
 
     module Matrix
         implicit none
+        integer :: NMAX = 1000
 
     contains
 
@@ -140,6 +141,32 @@
             return
         end function
 
+        function rand_vector(n) result (x)
+            implicit none
+            integer :: n
+            double precision :: x (n)
+
+            integer :: i
+
+            do i = 1, n
+                x(i) = 2 * ran(0) - 1
+            end do
+            return
+        end function
+
+        function rand_matrix(m, n) result (A)
+            implicit none
+            integer :: m, n
+            double precision :: A(m, n)
+
+            integer :: i
+
+            do i = 1, m
+                A(i, :) = rand_vector(n)
+            end do
+            return
+        end function
+
         function id_matrix(n) result (A)
             implicit none
 
@@ -246,7 +273,50 @@
                     call swap_rows(P, j, k, n)
                 end if
             end do
+            return
+        end function
 
+        function vector_norm(x, n) result (s)
+            implicit none
+
+            integer :: n
+            double precision :: x(n)
+            
+            double precision :: s
+
+            s = sqrt(dot_product(x, x))
+            return
+        end function
+
+        function matrix_norm(A, n) result (s)
+!           Frobenius norm
+            implicit none
+            integer :: n
+            double precision :: A(n, n)
+            double precision :: s
+
+            s = sqrt(sum(A * A))
+            return 
+        end function
+
+        function spectral_radius(A, n, k) result (r)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n), M(n, n)
+            double precision :: r
+
+            integer :: i, k
+
+            M(:, :) = A(:, :)
+
+            do i = 1, k
+                M = matmul(M, M)
+            end do
+            r = matrix_norm(M, n)
+            do i = 1, k
+                r = sqrt(r)
+            end do
             return
         end function
 
@@ -259,6 +329,9 @@
 
             integer :: i
 
+            L(:, :) = 0.0D0
+            U(:, :) = 0.0D0
+ 
             do i = 1, n
                 L(i, i) = 1.0D0
                 L(i,  :i-1) = A(i,  :i-1)
@@ -402,41 +475,52 @@
         end function
 
 !       === Linear System Solving Conditions ===
-        function Jacobi_cond(A, b, n) result (x)
+        function Jacobi_cond(A, n) result (x)
             implicit none
 
             integer :: n
 
             double precision :: A(n, n)
-            double precision :: b(n)
 
             logical :: x
 
-            b = dot_product(A(1,:), b)
-
-            x = .TRUE.
+            x = (spectral_radius(A, n, 1000) < 1)
 
             return
         end function
 
 !       == Linear System Solving Methods ==
-        function Jacobi(A, b, n) result (x)
+        function Jacobi(A, x, b, e, n) result (ok)
             implicit none
             
             integer :: n
 
             double precision :: A(n, n)
-            double precision :: b(n)
+            double precision :: b(n), x(n), x0(n)
 
-            logical :: x
+            logical :: ok
 
-            x = Jacobi_cond(A, b, n)
+            double precision :: e
 
-            if (.NOT. x) then
+            integer :: i, k
+
+            x0 = rand_vector(n)
+
+            ok = Jacobi_cond(A, n)
+
+            if (.NOT. ok) then
                 call ill_cond()
                 return
             end if
 
+            do k = 1, NMAX
+                do i = 1, n
+                    x(i) = (b(i) - dot_product(A(i, :), x0)) / A(i, i)
+                end do
+                x0(:) = x(:)
+
+                e = vector_norm(x - b, n)
+            end do
             return
         end function
 
