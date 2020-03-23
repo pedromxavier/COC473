@@ -66,11 +66,11 @@ program main
 
 !   Print its Determinant
     d = det(A, n)
-    write(*, *) 'Matrix Determinant = ', d
+    write(*, *) 'Matrix Determinant =', d
 
 !   Print its Spectral Radius
-    r = spectral_radius(A, n, 1000)
-    write(*, *) 'Spectral Radius = ', r
+    r = spectral_radius(A, n)
+    write(*, *) 'Spectral Radius =', r
 
 
     if (d == 0.0D0) then
@@ -135,6 +135,23 @@ program main
 !   Try Jacobi Method
 83  call info(':: Método de Jacobi ::')
     if (.NOT. Jacobi(A, x, b, e, n)) then
+        goto 84
+    end if
+
+    write(*, *) 'A:'
+    call print_matrix(A, n, n)
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
+
+    write(*, *) 'b:'
+    call print_vector(b, n)
+
+    print *, 'e = ', e
+
+!   Try Gauss-Seidel Method
+    84  call info(':: Método de Gauss-Seidel ::')
+    if (.NOT. Gauss_Seidel(A, x, b, e, n)) then
         goto 85
     end if
 

@@ -5,7 +5,7 @@
         integer :: NMAX = 1000
         integer :: KMAX = 1000
 
-        double precision :: TOL = 1.0D-5
+        double precision :: TOL = 1.0D-8
     contains
 !       ===== I/O Metods =====
         subroutine error(text)
@@ -528,7 +528,7 @@
             do i = 1, n
                 if (A(i, i) == 0.0D0) then
                     ok = .FALSE.
-                    call ill_cond()
+                    call error('Erro: Esse método não irá convergir.')
                     return
                 end if
             end do
@@ -563,14 +563,18 @@
                 return
             end if
 
-            do k = 1, NMAX
+            do k = 1, KMAX
                 do i = 1, n
                     x(i) = (b(i) - dot_product(A(i, :), x0)) / A(i, i)
                 end do
                 x0(:) = x(:)
-
                 e = vector_norm(matmul(A, x) - b, n)
+                if (e < TOL) then
+                    return
+                end if
             end do
+            call error('Erro: Esse método não convergiu.')
+            ok = .FALSE.
             return
         end function
 
@@ -602,8 +606,13 @@
                     end do
                     x(i) = (b(i) - s) / A(i, i)
                 end do
+                e = vector_norm(matmul(A, x) - b, n)
+                if (e < TOL) then
+                    return
+                end if
             end do
-
+            call error('Erro: Esse método não convergiu.')
+            ok = .FALSE.
             return
         end function
 
