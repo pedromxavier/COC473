@@ -3,9 +3,10 @@
     module Matrix
         implicit none
         integer :: NMAX = 1000
+        integer :: KMAX = 1000
 
+        double precision :: TOL = 1.0D-5
     contains
-
 !       ===== I/O Metods =====
         subroutine error(text)
 !           Red Text
@@ -183,7 +184,26 @@
             return
         end function
 
-        recursive function positive_definite(A, n) result (x)
+        function diagonally_dominant(A, n) result (ok)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n)
+
+            logical :: ok
+            integer :: i
+
+            do i = 1, n
+                if (abs(A(i, i)) < sum(abs(A(i, :i-1))) + sum(abs(A(i, i+1:)))) then
+                    ok = .FALSE.
+                    return
+                end if
+            end do
+            ok = .TRUE.
+            return
+        end function
+
+        recursive function positive_definite(A, n) result (ok)
 !       Checks wether a matrix is positive definite
 !       according to Sylvester's criterion.
             implicit none
@@ -191,35 +211,35 @@
             integer :: n
             double precision A(n, n)
 
-            logical :: x
+            logical :: ok
 
             if (n == 1) then
-                x = (A(1, 1) > 0)
+                ok = (A(1, 1) > 0)
                 return
             else
-                x = positive_definite(A(:n-1, :n-1), n-1) .AND. (det(A, n) > 0)
+                ok = positive_definite(A(:n-1, :n-1), n-1) .AND. (det(A, n) > 0)
                 return
             end if
         end function
 
-        function symmetrical(A, n) result (x)
+        function symmetrical(A, n) result (ok)
 !           Check if the Matrix is symmetrical
             integer :: n
 
             double precision :: A(n, n)
 
             integer :: i, j
-            logical :: x
+            logical :: ok
             
             do i = 1, n
                 do j = 1, i-1
                     if (A(i, j) /= A(j, i)) then
-                        x = .FALSE.
+                        ok = .FALSE.
                         return
                     end if
                 end do
             end do
-            x = .TRUE.
+            ok = .TRUE.
             return
         end function
 
@@ -299,22 +319,22 @@
             return 
         end function
 
-        function spectral_radius(A, n, k) result (r)
+        function spectral_radius(A, n) result (r)
             implicit none
 
             integer :: n
             double precision :: A(n, n), M(n, n)
             double precision :: r
 
-            integer :: i, k
+            integer :: i
 
             M(:, :) = A(:, :)
 
-            do i = 1, k
+            do i = 1, KMAX
                 M = matmul(M, M)
             end do
             r = matrix_norm(M, n)
-            do i = 1, k
+            do i = 1, KMAX
                 r = sqrt(r)
             end do
             return
@@ -340,20 +360,20 @@
         end subroutine
 
 !       === Matrix Factorization Conditions ===
-        function Cholesky_cond(A, n) result (x)
+        function Cholesky_cond(A, n) result (ok)
             implicit none
 
             integer :: n
             double precision :: A(n, n)
 
-            logical :: x
+            logical :: ok
 
-            x = symmetrical(A, n) .AND. positive_definite(A, n)
+            ok = symmetrical(A, n) .AND. positive_definite(A, n)
             return
 
         end function
 
-        function PLU_cond(A, n) result (x)
+        function PLU_cond(A, n) result (ok)
             implicit none
 
             integer :: n
@@ -362,7 +382,7 @@
             integer :: i, j
             double precision :: s
 
-            logical :: x
+            logical :: ok
 
             do j = 1, n
                 s = 0.0D0
@@ -373,48 +393,48 @@
                 end do
             end do
             
-            x = (s < 0.01D0)
+            ok = (s < 0.01D0)
 
             return
         end function
 
-        function LU_cond(A, n) result (x)
+        function LU_cond(A, n) result (ok)
             implicit none
 
             integer :: n
             double precision A(n, n)
 
-            logical :: x
+            logical :: ok
 
-            x = positive_definite(A, n)
+            ok = positive_definite(A, n)
 
             return
         end function
 
 !       ======= Matrix Factorization Methods ========
-        function PLU_decomp(A, P, L, U, n) result (x)
+        function PLU_decomp(A, P, L, U, n) result (ok)
             implicit none
 
             integer :: n
             double precision :: A(n,n), P(n,n), L(n,n), U(n,n)
 
-            logical :: x
+            logical :: ok
 
 !           Permutation Matrix
             P = pivot_matrix(A, n)
 
 !           Decomposition over Row-Swapped Matrix
-            x = LU_decomp(matmul(P, A), L, U, n)
+            ok = LU_decomp(matmul(P, A), L, U, n)
             return
         end function
             
-        function LU_decomp(A, L, U, n) result (x)
+        function LU_decomp(A, L, U, n) result (ok)
             implicit none
 
             integer :: n
             double precision :: A(n, n), L(n, n), U(n,n), M(n, n)
 
-            logical :: x
+            logical :: ok
 
             integer :: i, j, k
 
@@ -423,7 +443,7 @@
 
             if (.NOT. LU_cond(A, n)) then
                 call ill_cond()
-                x = .FALSE.
+                ok = .FALSE.
                 return
             end if
 
@@ -441,24 +461,24 @@
 
             call LU_matrix(M, L, U, n)
 
-            x = .TRUE.
+            ok = .TRUE.
             return
 
         end function
 
-        function Cholesky_decomp(A, L, n) result (x)
+        function Cholesky_decomp(A, L, n) result (ok)
             implicit none
 
             integer :: n
             double precision :: A(n, n), L(n, n)
 
-            logical :: x
+            logical :: ok
 
             integer :: i, j
 
             if (.NOT. Cholesky_cond(A, n)) then
                 call ill_cond()
-                x = .FALSE.
+                ok = .FALSE.
                 return
             end if
 
@@ -469,23 +489,55 @@
                 end do
             end do
 
-            x = .TRUE.
+            ok = .TRUE.
             return
 
         end function
 
 !       === Linear System Solving Conditions ===
-        function Jacobi_cond(A, n) result (x)
+        function Jacobi_cond(A, n) result (ok)
             implicit none
 
             integer :: n
 
             double precision :: A(n, n)
 
-            logical :: x
+            logical :: ok
 
-            x = (spectral_radius(A, n, 1000) < 1)
+            if (.NOT. spectral_radius(A, n) < 1) then
+                ok = .FALSE.
+                call ill_cond()
+                return
+            else
+                ok = .TRUE.
+                return
+            end if
+        end function
 
+        function Gauss_Seidel_cond(A, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n)
+
+            logical :: ok
+
+            integer :: i
+
+            do i = 1, n
+                if (A(i, i) == 0.0D0) then
+                    ok = .FALSE.
+                    call ill_cond()
+                    return
+                end if
+            end do
+
+            if (.NOT. (diagonally_dominant(A, n) .OR. (symmetrical(A, n) .AND. positive_definite(A, n)))) then
+                call warn('Aviso: Esse método pode não convergir.')
+            end if
+
+            ok = .TRUE.
             return
         end function
 
@@ -497,10 +549,9 @@
 
             double precision :: A(n, n)
             double precision :: b(n), x(n), x0(n)
+            double precision :: e
 
             logical :: ok
-
-            double precision :: e
 
             integer :: i, k
 
@@ -509,7 +560,6 @@
             ok = Jacobi_cond(A, n)
 
             if (.NOT. ok) then
-                call ill_cond()
                 return
             end if
 
@@ -519,8 +569,41 @@
                 end do
                 x0(:) = x(:)
 
-                e = vector_norm(x - b, n)
+                e = vector_norm(matmul(A, x) - b, n)
             end do
+            return
+        end function
+
+        function Gauss_Seidel(A, x, b, e, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n)
+            double precision :: b(n), x(n)
+            double precision :: e, s
+
+            logical :: ok
+            integer :: i, j, k
+
+            ok = Gauss_Seidel_cond(A, n)
+
+            if (.NOT. ok) then
+                return
+            end if
+
+            do k = 1, KMAX
+                do i = 1, n
+                    s = 0.0D0
+                    do j = 1, n
+                        if (i /= j) then
+                            s = s + A(i, j) * x(j)
+                        end if
+                    end do
+                    x(i) = (b(i) - s) / A(i, i)
+                end do
+            end do
+
             return
         end function
 
