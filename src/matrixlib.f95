@@ -650,6 +650,10 @@
 
             ok = LU_decomp(A, L, U, n)
 
+            if (.NOT. ok) then
+                return
+            end if
+
             call LU_backsub(L, U, x, b, n)
 
             return
@@ -667,9 +671,36 @@
 
             ok = PLU_decomp(A, P, L, U, n)
 
+            if (.NOT. ok) then
+                return
+            end if
+
             call LU_backsub(L, U, x, matmul(P, b), n)
 
             x(:) = matmul(P, x)
+
+            return
+        end function
+
+        function Cholesky_solve(A, x, b, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n), L(n, n), U(n, n)
+            double precision :: b(n), x(n)
+
+            logical :: ok
+
+            ok = Cholesky_decomp(A, L, n)
+
+            if (.NOT. ok) then
+                return
+            end if
+
+            U = transpose(L)
+
+            call LU_backsub(L, U, x, b, n)
 
             return
         end function
