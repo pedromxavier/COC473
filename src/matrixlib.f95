@@ -616,4 +616,63 @@
             return
         end function
 
+        subroutine LU_backsub(L, U, x, b, n)
+            implicit none
+
+            integer :: n
+
+            double precision :: L(n, n), U(n, n)
+            double precision :: b(n), x(n), y(n)
+
+            integer :: i
+
+!           Ly = b
+            do i = 1, n
+                y(i) = b(i) - sum(L(i, :i-1) * y( :i-1))
+            end do
+
+!           Ux = y
+            do i = n, 1, -1
+                x(i) = y(i) / U(i, i) - sum(U(i, i+1:) * x(i+1:))
+            end do
+
+        end subroutine
+
+        function LU_solve(A, x, b, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n), L(n, n), U(n, n)
+            double precision :: b(n), x(n)
+
+            logical :: ok
+
+            ok = LU_decomp(A, L, U, n)
+
+            call LU_backsub(L, U, x, b, n)
+
+            return
+        end function
+
+        function PLU_solve(A, x, b, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n), P(n,n), L(n, n), U(n, n)
+            double precision :: b(n), x(n)
+
+            logical :: ok
+
+            ok = PLU_decomp(A, P, L, U, n)
+
+            call LU_backsub(L, U, x, matmul(P, b), n)
+
+            x(:) = matmul(P, x)
+
+            return
+        end function
+
+
     end module Matrix
