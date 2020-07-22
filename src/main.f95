@@ -36,6 +36,8 @@ program main
     matrix_fname = 'matrix.txt'
     vector_fname = 'vector.txt'
 
+    argc = iargc()
+
     if (argc == 1) then
         call getarg(1, matrix_fname)
     elseif(argc == 2) then
