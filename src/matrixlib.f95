@@ -5,7 +5,7 @@
         integer :: NMAX = 1000
         integer :: KMAX = 1000
 
-        integer :: MAX_ITER = 100
+        integer :: MAX_ITER = 1000
 
         double precision :: TOL = 1.0D-8
     contains
@@ -185,6 +185,28 @@
             end do
             return
         end function
+
+        function given_matrix(A, n, i, j) result (G)
+            implicit none
+
+            integer :: n, i, j
+            double precision :: A(n, n), G(n, n)
+            double precision :: t, c, s
+
+            G(:, :) = id_matrix(n)
+
+            t = 0.5D0 * DATAN2(2.0D0 * A(i,j), A(i, i) - A(j, j))
+            s = DSIN(t)
+            c = DCOS(t)
+
+            G(i, i) = c
+            G(j, j) = c
+            G(i, j) = -s
+            G(j, i) = s
+
+            return
+        end function
+
 
         function diagonally_dominant(A, n) result (ok)
             implicit none
@@ -730,7 +752,7 @@
 
             double precision :: A(n, n)
             double precision :: x(n)
-            double precision :: TOL, l, ll
+            double precision :: l, ll
 
             logical :: ok
 
@@ -739,10 +761,12 @@
             x(1) = 1.0D0
 
 !           Initialize Eigenvalues
-            ll = 0.0D0
+            l = 0.0D0
 
 !           Checks if error tolerance was reached          
             do while (k < MAX_ITER)
+                ll = l
+
                 x(:) = matmul(A, x)                
 
 !               Retrieve Eigenvalue
@@ -751,19 +775,58 @@
 !               Retrieve Eigenvector                
                 x(:) = x(:) / l
 
-                if (abs((l - ll)/l) < TOL) then
+                if (dabs((l - ll) / l) < TOL) then
                     ok = .TRUE.
-                    exit
+                    return
+                else 
+                    k = k + 1
+                    continue
                 end if
-
-                ll = l
-
-                k = k + 1
             end do
-
             ok = .FALSE.
-
             return
-        end function                              
+        end function
+        
+        function Jacobi_eigen(A, n, L, X) result (ok)
+            implicit none
+            integer :: n, i, j, u, v
+            integer :: k = 0
+
+            double precision :: A(n, n), L(n, n), X(n, n), P(n, n)
+            double precision :: y, z
+
+            logical :: ok
+
+            X(:, :) = id_matrix(n)
+            L(:, :) = A(:, :)
+
+            do while (k < MAX_ITER)
+                z = 0.0D0
+                do i = 1, n
+                    do j = 1, i - 1
+                        y = DABS(L(i, j))
+
+!                       Found new maximum absolute value                        
+                        if (y > z) then
+                            u = i
+                            v = j
+                            z = y
+                        end if
+                    end do
+                end do
+
+                if (z >= TOL) then
+                    P(:, :) = given_matrix(L, n, u, v)
+                    L(:, :) = matmul(matmul(transpose(P), L), P)
+                    X(:, :) = matmul(X, P)
+                    k = k + 1
+                else
+                    ok = .TRUE.
+                    return
+                end if
+            end do
+            ok = .FALSE.
+            return
+        end function
 
     end module Matrix

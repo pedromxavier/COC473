@@ -16,5 +16,5 @@ matrix2: matrixlib.o main2.o
 	$(f95c) -c $(args) $<
 
 clean:
-	rm *.o *.mod matrix
+	rm *.o *.mod matrix[1-9]
 # End Makefile

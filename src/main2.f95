@@ -11,6 +11,8 @@ program main2
 !   Matrices
     integer :: m, n
     double precision, allocatable :: A(:, :)
+    double precision, allocatable :: LL(:, :)
+    double precision, allocatable :: XX(:, :)
 
 !   Vectors
     integer :: t
@@ -57,13 +59,9 @@ program main2
 !   Eigenvalue Time
 !   Power Method
     allocate(x(n))
-    x(:) = power_method(A, n, TOL)
-
-!   Compute eigenvalue
-    l = vector_norm(x, n)
-
-!   Normalize Vector
-    x(:) = x(:) / l
+    if (.not. power_method(A, n, x, l)) then
+        goto 80
+    end if 
 
     write(*, *) 'x:'
     call print_vector(x, n)
@@ -71,7 +69,29 @@ program main2
     write(*, *) 'lambda:'
     write(*, *) l
 
+!   Jacobi Eigenvalues/vectors time
+    allocate(LL(n, n))
+    allocate(XX(n, n))
+    if (.not. Jacobi_eigen(A, n, LL, XX)) then
+        goto 81
+    end if
+    write(*, *) 'L:'
+    call print_matrix(LL, n, n)
+    write(*, *) 'X:'
+    call print_matrix(XX, n, n)
     goto 85
+
+80  call error('O Método das potências não convergiu a tempo.')
+    write(*, *) 'x:'
+    call print_vector(x, n)
+    goto 100
+
+81  call error('O Método de autovalores de Jacobi não convergiu a tempo.')
+    write(*, *) 'L:'
+    call print_matrix(LL, n, n)
+    write(*, *) 'X:'
+    call print_matrix(XX, n, n)
+    goto 100
 
 85  call info('Sucesso!')
     deallocate(A)
