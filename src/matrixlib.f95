@@ -5,6 +5,8 @@
         integer :: NMAX = 1000
         integer :: KMAX = 1000
 
+        integer :: MAX_ITER = 100
+
         double precision :: TOL = 1.0D-8
     contains
 !       ===== I/O Metods =====
@@ -410,7 +412,14 @@
 
             return
         end function
-
+!        _      _____  _____ _______         __ 
+!       | |    |_   _|/ ____|__   __|/\     /_ |
+!       | |      | | | (___    | |  /  \     | |
+!       | |      | |  \___ \   | | / /\ \    | |
+!       | |____ _| |_ ____) |  | |/ ____ \   | |
+!       |______|_____|_____/   |_/_/    \_\  |_|
+!       ========================================
+                                                
 !       ======= Matrix Factorization Methods ========
         function PLU_decomp(A, P, L, U, n) result (ok)
             implicit none
@@ -705,5 +714,56 @@
             return
         end function
 
+!        _      _____  _____ _______         ___  
+!       | |    |_   _|/ ____|__   __|/\     |__ \
+!       | |      | | | (___    | |  /  \       ) |
+!       | |      | |  \___ \   | | / /\ \     / / 
+!       | |____ _| |_ ____) |  | |/ ____ \   / /_  
+!       |______|_____|_____/   |_/_/    \_\ |____|
+!       ==========================================
+
+!       ============ Power Method ============
+        function power_method(A, n, x, l) result (ok)
+            implicit none
+            integer :: n
+            integer :: k = 0
+
+            double precision :: A(n, n)
+            double precision :: x(n)
+            double precision :: TOL, l, ll
+
+            logical :: ok
+
+!           Begin with random normal vector and set 1st component to zero
+            x(:) = rand_vector(n)
+            x(1) = 1.0D0
+
+!           Initialize Eigenvalues
+            ll = 0.0D0
+
+!           Checks if error tolerance was reached          
+            do while (k < MAX_ITER)
+                x(:) = matmul(A, x)                
+
+!               Retrieve Eigenvalue
+                l = x(1)
+
+!               Retrieve Eigenvector                
+                x(:) = x(:) / l
+
+                if (abs((l - ll)/l) < TOL) then
+                    ok = .TRUE.
+                    exit
+                end if
+
+                ll = l
+
+                k = k + 1
+            end do
+
+            ok = .FALSE.
+
+            return
+        end function                              
 
     end module Matrix

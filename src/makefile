@@ -3,8 +3,11 @@
 f95c = gfortran
 args = -O2 -ffpe-summary=none
 # Makefile
-matrix: matrixlib.o main.o
-	$(f95c) -o matrix $(args) matrixlib.o main.o
+matrix1: matrixlib.o main1.o
+	$(f95c) -o matrix1 $(args) matrixlib.o main1.o
+
+matrix2: matrixlib.o main2.o
+	$(f95c) -o matrix2 $(args) matrixlib.o main2.o
 
 %.mod: %.o %.f95
 	$(f95c) -c $(args) $<

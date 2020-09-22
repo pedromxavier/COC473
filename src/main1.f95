@@ -1,4 +1,4 @@
-program main
+program main1
     use Matrix
 
     implicit none
@@ -187,4 +187,4 @@ program main
 
 100     stop
 
-end program main
+end program main1
