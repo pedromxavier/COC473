@@ -9,7 +9,7 @@ program main1
     character(len=32) :: matrix_fname, vector_fname
 
 !   Matrices
-    integer :: m, n
+    integer :: m, n, i
     double precision, allocatable :: A(:, :)
 
 !   Determinant
@@ -28,6 +28,7 @@ program main1
     integer :: t
     double precision, allocatable :: b(:)
     double precision, allocatable :: x(:)
+    double precision, allocatable :: y(:)
 
 !   Error
     double precision :: e
@@ -85,29 +86,38 @@ program main1
     allocate(L(n, n))
     allocate(U(n, n))
 
+!   Linear System Time!
+!   Allocate Result Vectors
+    allocate(x(n))
+    allocate(y(n))
+
 !   Try LU Decomposition
     call info(':: Decomposição LU (sem pivoteamento) ::')
     if (.NOT. LU_DECOMP(A, L, U, n)) then
         goto 81
+    else if (.NOT. LU_solve(A, x, y, b, n)) then
+        goto 81
     end if
 
-    write(*, *) 'A:'
-    call print_matrix(A, n, n)
-    
     write(*, *) 'L:'
     call print_matrix(L, n, n)
 
     write(*, *) 'U:'
     call print_matrix(U, n, n)
 
+    write(*, *) 'y:'
+    call print_vector(y, n)
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
+
 !   Try PLU Decomposition
 81  call info(':: Decomposição PLU (com pivoteamento) ::')
     if (.NOT. PLU_DECOMP(A, P, L, U, n)) then
         goto 82
+    else if (.NOT. PLU_solve(A, x, y, b, n)) then
+        goto 82
     end if
-
-    write(*, *) 'A:'
-    call print_matrix(A, n, n)
 
     write(*, *) 'P:'
     call print_matrix(P, n, n)
@@ -118,21 +128,38 @@ program main1
     write(*, *) 'U:'
     call print_matrix(U, n, n)
 
+    write(*, *) 'y:'
+    call print_vector(y, n)
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
+
+    call info("DET")
+    d = 1.0D0
+    do i = 1, n
+        d = d * U(i, i) * L(i, i)
+    end do
+    write(*, *) d
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
+
 !   Try Cholesky Decomposition
 82  call info(':: Decomposição de Cholesky ::')
     if (.NOT. CHOLESKY_DECOMP(A, L, n)) then
         goto 83
+    else if (.NOT. Cholesky_solve(A, x, y, b, n)) then
+        goto 83
     end if
-
-    write(*, *) 'A:'
-    call print_matrix(A, n, n)
 
     write(*, *) 'L:'
     call print_matrix(L, n, n)
 
-!   Linear System Time!
-!   Allocate Result Vectors
-    allocate(x(n))
+    write(*, *) 'y:'
+    call print_vector(y, n)
+
+    write(*, *) 'x:'
+    call print_vector(x, n)
 
 !   Try Jacobi Method
 83  call info(':: Método de Jacobi ::')
@@ -140,19 +167,13 @@ program main1
         goto 84
     end if
 
-    write(*, *) 'A:'
-    call print_matrix(A, n, n)
-
     write(*, *) 'x:'
     call print_vector(x, n)
 
-    write(*, *) 'b:'
-    call print_vector(b, n)
-
-    print *, 'e = ', e
+    print *, 'e =', e
 
 !   Try Gauss-Seidel Method
-    84  call info(':: Método de Gauss-Seidel ::')
+84  call info(':: Método de Gauss-Seidel ::')
     if (.NOT. Gauss_Seidel(A, x, b, e, n)) then
         goto 85
     end if

@@ -59,6 +59,7 @@ program main2
 !   Eigenvalue Time
 !   Power Method
     allocate(x(n))
+    call info(':: Método das Potências (Power Method) ::')
     if (.not. power_method(A, n, x, l)) then
         goto 80
     end if 
@@ -72,6 +73,7 @@ program main2
 !   Jacobi Eigenvalues/vectors time
     allocate(LL(n, n))
     allocate(XX(n, n))
+    call info(':: Método de autovalores de Jacobi ::')
     if (.not. Jacobi_eigen(A, n, LL, XX)) then
         goto 81
     end if

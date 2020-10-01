@@ -34,7 +34,7 @@
         subroutine ill_cond()
 !           Prompts the user with an ill-conditioning warning.
             implicit none
-            call error('Matriz mal-condicionada.')
+            call error('Matriz mal-condicionada: este método não irá convergir.')
         end subroutine
 
         subroutine print_matrix(A, m, n)
@@ -113,37 +113,6 @@
         end subroutine
 
 !       =========== Matrix Methods ============
-        recursive function det(A, n) result (d)
-            implicit none
-
-            integer :: n
-            double precision :: A(n, n)
-            double precision :: X(n-1, n-1)
-
-            integer :: i
-            double precision :: d, s
-
-            if (n == 1) then
-                d = A(1, 1)
-                return
-            elseif (n == 2) then
-                d = A(1, 1) * A(2, 2) - A(1, 2) * A(2, 1)
-                return
-            else
-                d = 0.0D0
-                s = 1.0D0
-                do i = 1, n
-!                   Compute submatrix X
-                    X(:,  :i-1) = A(2:,    :i-1)
-                    X(:, i:   ) = A(2:, i+1:   )
-
-                    d = s * det(X, n-1) * A(1, i) + d
-                    s = -s
-                end do
-            end if
-            return
-        end function
-
         function rand_vector(n) result (x)
             implicit none
             integer :: n
@@ -218,7 +187,7 @@
             integer :: i
 
             do i = 1, n
-                if (abs(A(i, i)) < sum(abs(A(i, :i-1))) + sum(abs(A(i, i+1:)))) then
+                if (DABS(A(i, i)) < SUM(DABS(A(i, :i-1))) + SUM(DABS(A(i, i+1:)))) then
                     ok = .FALSE.
                     return
                 end if
@@ -339,7 +308,7 @@
             double precision :: A(n, n)
             double precision :: s
 
-            s = sqrt(sum(A * A))
+            s = DSQRT(SUM(A * A))
             return 
         end function
 
@@ -347,20 +316,67 @@
             implicit none
 
             integer :: n
-            double precision :: A(n, n), M(n, n)
-            double precision :: r
+            double precision :: A(n, n), x(n)
+            double precision :: r, l
+
+            logical :: ok
+        
+            ok = power_method(A, n, x, l)
+
+            r = DABS(l)    
+            return
+        end function
+
+        recursive function det(A, n) result (d)
+            implicit none
+
+            integer :: n
+            double precision :: A(n, n)
+            double precision :: X(n-1, n-1)
 
             integer :: i
+            double precision :: d, s
 
-            M(:, :) = A(:, :)
+            if (n == 1) then
+                d = A(1, 1)
+                return
+            elseif (n == 2) then
+                d = A(1, 1) * A(2, 2) - A(1, 2) * A(2, 1)
+                return
+            else
+                d = 0.0D0
+                s = 1.0D0
+                do i = 1, n
+!                   Compute submatrix X
+                    X(:,  :i-1) = A(2:,    :i-1)
+                    X(:, i:   ) = A(2:, i+1:   )
 
-            do i = 1, KMAX
-                M = matmul(M, M)
+                    d = s * det(X, n-1) * A(1, i) + d
+                    s = -s
+                end do
+            end if
+            return
+        end function
+
+        function LU_det(A, n) result (d)
+            implicit none
+
+            integer :: n
+            integer :: i
+            double precision :: A(n, n), L(n, n), U(n, n)
+            double precision :: d
+
+            d = 0.0D0
+
+            if (.NOT. LU_decomp(A, L, U, n)) then
+                call ill_cond()
+                return
+            end if
+
+            do i = 1, n
+                d = d * L(i, i) * U(i, i)
             end do
-            r = matrix_norm(M, n)
-            do i = 1, KMAX
-                r = sqrt(r)
-            end do
+
             return
         end function
 
@@ -490,6 +506,7 @@
                 end do
             end do
 
+!           Splits M into L & U
             call LU_matrix(M, L, U, n)
 
             ok = .TRUE.
@@ -522,10 +539,8 @@
 
             ok = .TRUE.
             return
-
         end function
 
-!       === Linear System Solving Conditions ===
         function Jacobi_cond(A, n) result (ok)
             implicit none
 
@@ -535,7 +550,7 @@
 
             logical :: ok
 
-            if (.NOT. spectral_radius(A, n) < 1) then
+            if (.NOT. spectral_radius(A, n) < 1.0D0) then
                 ok = .FALSE.
                 call ill_cond()
                 return
@@ -545,34 +560,6 @@
             end if
         end function
 
-        function Gauss_Seidel_cond(A, n) result (ok)
-            implicit none
-
-            integer :: n
-
-            double precision :: A(n, n)
-
-            logical :: ok
-
-            integer :: i
-
-            do i = 1, n
-                if (A(i, i) == 0.0D0) then
-                    ok = .FALSE.
-                    call error('Erro: Esse método não irá convergir.')
-                    return
-                end if
-            end do
-
-            if (.NOT. (diagonally_dominant(A, n) .OR. (symmetrical(A, n) .AND. positive_definite(A, n)))) then
-                call warn('Aviso: Esse método pode não convergir.')
-            end if
-
-            ok = .TRUE.
-            return
-        end function
-
-!       == Linear System Solving Methods ==
         function Jacobi(A, x, b, e, n) result (ok)
             implicit none
             
@@ -607,6 +594,34 @@
             call error('Erro: Esse método não convergiu.')
             ok = .FALSE.
             return
+        end function
+
+        function Gauss_Seidel_cond(A, n) result (ok)
+            implicit none
+
+            integer :: n
+
+            double precision :: A(n, n)
+
+            logical :: ok
+
+            integer :: i
+
+            do i = 1, n
+                if (A(i, i) == 0.0D0) then
+                    ok = .FALSE.
+                    call ill_cond()
+                    return
+                end if
+            end do
+
+            if (symmetrical(A, n) .AND. positive_definite(A, n)) then
+                ok = .TRUE.
+                return
+            else
+                call warn('Aviso: Esse método pode não convergir.')
+                return
+            end if
         end function
 
         function Gauss_Seidel(A, x, b, e, n) result (ok)
@@ -647,7 +662,9 @@
             return
         end function
 
-        subroutine LU_backsub(L, U, x, b, n)
+!       Decomposição LU e afins
+        
+        subroutine LU_backsub(L, U, x, y, b, n)
             implicit none
 
             integer :: n
@@ -657,25 +674,25 @@
 
             integer :: i
 
-!           Ly = b
+!           Ly = b (Forward Substitution)
             do i = 1, n
-                y(i) = b(i) - sum(L(i, :i-1) * y( :i-1))
+                y(i) = (b(i) - SUM(L(i, 1:i-1) * y(1:i-1))) / L(i, i)
             end do
 
-!           Ux = y
+!           Ux = y (Backsubstitution)
             do i = n, 1, -1
-                x(i) = y(i) / U(i, i) - sum(U(i, i+1:) * x(i+1:))
+                x(i) = (y(i) - SUM(U(i,i+1:n) * x(i+1:n))) / U(i, i)
             end do
 
         end subroutine
 
-        function LU_solve(A, x, b, n) result (ok)
+        function LU_solve(A, x, y, b, n) result (ok)
             implicit none
 
             integer :: n
 
             double precision :: A(n, n), L(n, n), U(n, n)
-            double precision :: b(n), x(n)
+            double precision :: b(n), x(n), y(n)
 
             logical :: ok
 
@@ -685,18 +702,18 @@
                 return
             end if
 
-            call LU_backsub(L, U, x, b, n)
+            call LU_backsub(L, U, x, y, b, n)
 
             return
         end function
 
-        function PLU_solve(A, x, b, n) result (ok)
+        function PLU_solve(A, x, y, b, n) result (ok)
             implicit none
 
             integer :: n
 
             double precision :: A(n, n), P(n,n), L(n, n), U(n, n)
-            double precision :: b(n), x(n)
+            double precision :: b(n), x(n), y(n)
 
             logical :: ok
 
@@ -706,20 +723,20 @@
                 return
             end if
 
-            call LU_backsub(L, U, x, matmul(P, b), n)
+            call LU_backsub(L, U, x, y, matmul(P, b), n)
 
             x(:) = matmul(P, x)
 
             return
         end function
 
-        function Cholesky_solve(A, x, b, n) result (ok)
+        function Cholesky_solve(A, x, y, b, n) result (ok)
             implicit none
 
             integer :: n
 
             double precision :: A(n, n), L(n, n), U(n, n)
-            double precision :: b(n), x(n)
+            double precision :: b(n), x(n), y(n)
 
             logical :: ok
 
@@ -731,7 +748,7 @@
 
             U = transpose(L)
 
-            call LU_backsub(L, U, x, b, n)
+            call LU_backsub(L, U, x, y, b, n)
 
             return
         end function
@@ -829,4 +846,32 @@
             return
         end function
 
+!        _      _____  _____ _______         _____  
+!       | |    |_   _|/ ____|__   __|/\     |__   |
+!       | |      | | | (___    | |  /  \       )  /
+!       | |      | |  \___ \   | | / /\ \     |_  \
+!       | |____ _| |_ ____) |  | |/ ____ \   ___)  |
+!       |______|_____|_____/   |_/_/    \_\ |_____/ 
+!       ==========================================
+
+        function least_squares(x, y, s, n) result (ok)
+            implicit none
+            integer :: n
+
+            logical :: ok
+
+            double precision :: A(2,2), b(2), s(2), r(2), x(n), y(n)
+            
+            A(1, 1) = n
+            A(1, 2) = SUM(x)
+            A(2, 1) = SUM(x)
+            A(2, 2) = dot_product(x, x)
+
+            b(1) = SUM(y)
+            b(2) = dot_product(x, y)
+
+            ok = Cholesky_solve(A, s, r, b, n)
+            return
+        end function
+        
     end module Matrix
