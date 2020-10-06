@@ -2,6 +2,7 @@
 # Macros
 f95c = gfortran
 args = -O2 -ffpe-summary=none
+blas = -llapack -lblas
 # Makefile
 
 all: matrix1 matrix2 matrix3 calc1
@@ -16,8 +17,7 @@ matrix3: matrixlib.o main3.o
 	$(f95c) -o matrix3 $(args) matrixlib.o main3.o
 
 calc1: calclib.o funcmod.o main4.o
-	$(f95c) -o calc1 $(args) calclib.o funcmod.o main4.o
-
+	$(f95c) -o calc1 $(args) calclib.o funcmod.o main4.o $(blas)
 %.mod: %.o %.f95
 	$(f95c) -c $(args) $<
 
