@@ -1,20 +1,27 @@
 !   Func Module
 
     module Func
+        use Util
         implicit none
+        double precision :: g = 9.80600D0
+        double precision :: k = 0.00341D0
 
-        double precision, parameter :: g = 9.80600D0
-        double precision, parameter :: k = 0.00341D0
-
-        double precision, parameter :: t1 = 0.0D0
-        double precision, parameter :: t2 = 0.0D0
+        double precision :: t1 = 0.0D0
+        double precision :: t2 = 0.0D0
 
         character (len = *), parameter :: F1_NAME = "f(x) = log(cosh(x * sqrt(g * j))) - 50"
         character (len = *), parameter :: F2_NAME = "f(x) = 4 * cos(x) - exp(2 * x)"
-        character (len = *), parameter :: F3_NAME = "f(x, y, z) := \n\t"// &
-                                                    "16x^4 + 16y^4 + z^4 = 16\n\"// &
-                                                    "tx^2 + y^2 + x^2 = 3\n\t"// &
-                                                    "x^3 - y + z = 1"
+        character (len = *), parameter :: F3_NAME = "f(x, y, z) :="//ENDL//TAB// &
+        "16x^4 + 16y^4 + z^4 = 16"//ENDL//TAB// &
+        "x^2 + y^2 + x^2 = 3"//ENDL//TAB// &
+        "x^3 - y + z = 1"
+        character (len = *), parameter :: F4_NAME = "f(c2, c3, c4) :="//ENDL//TAB// &
+        "c2^2 + 2 c3^2 + 6 c4^2 = 1"//ENDL//TAB// &
+        "8 c3^3 + 6 c3 c2^2 + 36 c3 c2 c4 + 108 c3 c4^4 = t1"//ENDL//TAB// &
+        "60 *c3^4 + 60 * c3^2  * c2^2 + 576 * c3^2 * c2 * c4 + "// & 
+        "2232 * c3^2  * c4^2 + 252 * c4^2 * c2^2 + "// &
+        "1296 * c4^3 c2 + 3348 c4^4 + 24 c2^3 c4 + 3 c2 = t2"
+        character (len = *), parameter :: F5_NAME = "f(x) = b1 + b2 x^b3"
 
     contains
 
@@ -253,7 +260,7 @@
 
     function ff2(x, n) result (y)
         implicit none
-        integer, intent(in) :: n
+        integer :: n
         double precision, dimension(n) :: x, y
         y = (/ff2_1(x), ff2_2(x), ff2_3(x)/)
         return
@@ -372,5 +379,41 @@
         return
     end function
 
+!   ============ One more function =============
+    function ff5(x, b, m, n) result (z)
+        implicit none
+        integer :: m, n
+        double precision, dimension(m), intent(in) :: b
+        double precision, dimension(n), intent(in) :: x
+        double precision, dimension(n) :: z
+        integer :: i
+!       m == 3
+        do i=1, n
+            z(i) = b(1) + (b(2) * (x(i) ** b(3)))
+        end do
+        return
+    end function
+
+!   ========= Derivatives ==========
+    function dff5(x, b, m, n) result (J)
+        implicit none
+        integer :: m, n
+        double precision, dimension(m), intent(in) :: b
+        double precision, dimension(n), intent(in) :: x
+        double precision, dimension(n, m) :: J
+        integer :: i
+!       m == 3
+        do i=1, n
+            J(i, :) = (/ &
+!               df_i / db_1
+                1.0D0, &
+!               df_i / db_2
+                x(i) ** b(3), &
+!               df_i / db_3
+                b(2) * b(3) * (x(i) ** (b(3) - 1.0D0)) &
+                /)
+        end do
+        return
+    end function
 
     end module Func

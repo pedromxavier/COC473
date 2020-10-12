@@ -1,36 +1,13 @@
 !   Matrix Module
 
     module Matrix
+        use Util
         implicit none
         integer :: NMAX = 1000
         integer :: KMAX = 1000
-
         integer :: MAX_ITER = 1000
-
         double precision :: TOL = 1.0D-8
     contains
-!       ===== I/O Metods =====
-        subroutine error(text)
-!           Red Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[31m'//text//''//achar(27)//'[0m'
-        end subroutine
-
-        subroutine warn(text)
-!           Yellow Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[93m'//text//''//achar(27)//'[0m'
-        end subroutine
-
-        subroutine info(text)
-!           Green Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[32m'//text//''//achar(27)//'[0m'
-        end subroutine
-
         subroutine ill_cond()
 !           Prompts the user with an ill-conditioning warning.
             implicit none
@@ -39,16 +16,12 @@
 
         subroutine print_matrix(A, m, n)
             implicit none
-
             integer :: m, n
             double precision :: A(m, n)
-
             integer :: i, j
-
-20          format(' |', F10.5, ' ')
-21          format(F10.5, '|')
-22          format(F10.5, ' ')
-
+20          format(' |', F32.12, ' ')
+21          format(F30.12, '|')
+22          format(F30.12, ' ')
             do i = 1, m
                 do j = 1, n
                     if (j == 1) then
@@ -67,61 +40,50 @@
             character(len=*) :: fname
             integer :: m, n
             double precision, allocatable :: A(:, :)
-
             integer :: i
-
             open(unit=33, file=fname, status='old', action='read')
             read(33, *) m
             read(33, *) n
             allocate(A(m, n))
-
             do i = 1, m
                 read(33,*) A(i,:)
             end do
-
             close(33)
         end subroutine
 
         subroutine print_vector(x, n)
             implicit none
-
             integer :: n
             double precision :: x(n)
-            
             integer :: i
-
-30          format(' |', F10.5, '|')
-
+30          format(' |', F30.12, '|')
             do i = 1, n
                 write(*, 30) x(i)
             end do
         end subroutine
 
-        subroutine read_vector(fname, b, t)
+        subroutine read_vector(fname, b, n)
             implicit none
             character(len=*) :: fname
-            integer :: t
+            integer :: n
             double precision, allocatable :: b(:)
 
             open(unit=33, file=fname, status='old', action='read')
-            read(33, *) t
-            allocate(b(t))
-
-            read(33,*) b(:)
-
+            read(33, *) n
+            allocate(b(n))
+            read(33, *) b(:)
             close(33)
         end subroutine
+
 
 !       =========== Matrix Methods ============
         function rand_vector(n) result (x)
             implicit none
             integer :: n
             double precision :: x (n)
-
             integer :: i
-
             do i = 1, n
-                x(i) = 2 * ran(0) - 1
+                x(i) = DRAND(-1.0D0, 1.0D0)
             end do
             return
         end function
@@ -130,9 +92,7 @@
             implicit none
             integer :: m, n
             double precision :: A(m, n)
-
             integer :: i
-
             do i = 1, m
                 A(i, :) = rand_vector(n)
             end do
@@ -141,14 +101,10 @@
 
         function id_matrix(n) result (A)
             implicit none
-
             integer :: n
             double precision :: A(n, n)
-
             integer :: j
-
             A(:, :) = 0.0D0
-
             do j = 1, n
                 A(j, j) = 1.0D0
             end do
@@ -249,6 +205,58 @@
             A(j, :) = temp(:)
         end subroutine
 
+        function outer_product(x, y, n) result(A)
+            implicit none
+            integer :: n
+            double precision, dimension(n), intent(in) :: x, y
+            double precision, dimension(n, n) :: A
+            integer :: i, j
+            do i=1,n
+                do j=1,n
+                    A(i, j) = x(i) * y(j)
+                end do
+            end do
+            return
+        end function
+
+!       ================= Matrix Method ====================
+        function inv(A, n, ok) result (Ainv)
+            integer :: n
+            double precision :: A(n, n), Ainv(n, n)
+            double precision :: work(n)
+            integer :: ipiv(n)   ! pivot indices
+            integer :: info
+
+            logical :: ok
+          
+            ! External procedures defined in LAPACK
+            external DGETRF
+            external DGETRI
+          
+            ! Store A in Ainv to prevent it from being overwritten by LAPACK
+            Ainv(:, :) = A(:, :)
+          
+            ! DGETRF computes an LU factorization of a general M-by-N matrix A
+            ! using partial pivoting with row interchanges.
+            call DGETRF(n, n, Ainv, n, ipiv, info)
+          
+            if (info /= 0) then
+                ok = .FALSE.
+                return
+            end if
+          
+            ! DGETRI computes the inverse of a matrix using the LU factorization
+            ! computed by DGETRF.
+            call DGETRI(n, Ainv, n, ipiv, work, n, info)
+          
+            if (info /= 0) then
+                ok = .FALSE.
+                return
+            end if
+
+            return
+        end function
+
         function row_max(A, j, n) result(k)
             implicit none
 
@@ -291,13 +299,19 @@
 
         function vector_norm(x, n) result (s)
             implicit none
-
             integer :: n
             double precision :: x(n)
-            
             double precision :: s
-
             s = sqrt(dot_product(x, x))
+            return
+        end function
+
+        function NORM(x, n) result (s)
+            implicit none
+            integer :: n
+            double precision :: x(n)
+            double precision :: s
+            s = SQRT(DOT_PRODUCT(x, x))
             return
         end function
 
@@ -318,22 +332,17 @@
             integer :: n
             double precision :: A(n, n), x(n)
             double precision :: r, l
-
-            logical :: ok
-        
+            logical :: ok        
             ok = power_method(A, n, x, l)
-
             r = DABS(l)    
             return
         end function
 
         recursive function det(A, n) result (d)
             implicit none
-
             integer :: n
-            double precision :: A(n, n)
-            double precision :: X(n-1, n-1)
-
+            double precision, dimension(n, n) :: A
+            double precision, dimension(n-1, n-1) :: X
             integer :: i
             double precision :: d, s
 
@@ -350,7 +359,6 @@
 !                   Compute submatrix X
                     X(:,  :i-1) = A(2:,    :i-1)
                     X(:, i:   ) = A(2:, i+1:   )
-
                     d = s * det(X, n-1) * A(1, i) + d
                     s = -s
                 end do
@@ -402,28 +410,20 @@
 !       === Matrix Factorization Conditions ===
         function Cholesky_cond(A, n) result (ok)
             implicit none
-
             integer :: n
             double precision :: A(n, n)
-
             logical :: ok
-
             ok = symmetrical(A, n) .AND. positive_definite(A, n)
             return
-
         end function
 
         function PLU_cond(A, n) result (ok)
             implicit none
-
             integer :: n
             double precision A(n, n)
-
             integer :: i, j
             double precision :: s
-
             logical :: ok
-
             do j = 1, n
                 s = 0.0D0
                 do i = 1, j
@@ -432,22 +432,16 @@
                     end if
                 end do
             end do
-            
             ok = (s < 0.01D0)
-
             return
         end function
 
         function LU_cond(A, n) result (ok)
             implicit none
-
             integer :: n
             double precision A(n, n)
-
             logical :: ok
-
             ok = positive_definite(A, n)
-
             return
         end function
 !        _      _____  _____ _______         __ 
@@ -461,15 +455,11 @@
 !       ======= Matrix Factorization Methods ========
         function PLU_decomp(A, P, L, U, n) result (ok)
             implicit none
-
             integer :: n
             double precision :: A(n,n), P(n,n), L(n,n), U(n,n)
-
             logical :: ok
-
 !           Permutation Matrix
             P = pivot_matrix(A, n)
-
 !           Decomposition over Row-Swapped Matrix
             ok = LU_decomp(matmul(P, A), L, U, n)
             return
@@ -477,28 +467,21 @@
             
         function LU_decomp(A, L, U, n) result (ok)
             implicit none
-
             integer :: n
             double precision :: A(n, n), L(n, n), U(n,n), M(n, n)
-
             logical :: ok
-
             integer :: i, j, k
-
 !           Results Matrix
             M(:, :) = A(:, :)
-
             if (.NOT. LU_cond(A, n)) then
                 call ill_cond()
                 ok = .FALSE.
                 return
             end if
-
             do k = 1, n-1
                 do i = k+1, n
                     M(i, k) = M(i, k) / M(k, k)
                 end do
-                
                 do j = k+1, n
                     do i = k+1, n
                         M(i, j) = M(i, j) - M(i, k) * M(k, j)
@@ -663,27 +646,20 @@
         end function
 
 !       Decomposição LU e afins
-        
         subroutine LU_backsub(L, U, x, y, b, n)
             implicit none
-
             integer :: n
-
             double precision :: L(n, n), U(n, n)
             double precision :: b(n), x(n), y(n)
-
             integer :: i
-
 !           Ly = b (Forward Substitution)
             do i = 1, n
                 y(i) = (b(i) - SUM(L(i, 1:i-1) * y(1:i-1))) / L(i, i)
             end do
-
 !           Ux = y (Backsubstitution)
             do i = n, 1, -1
                 x(i) = (y(i) - SUM(U(i,i+1:n) * x(i+1:n))) / U(i, i)
             end do
-
         end subroutine
 
         function LU_solve(A, x, y, b, n) result (ok)

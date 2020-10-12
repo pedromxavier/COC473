@@ -1,274 +1,39 @@
 !   Calc Module
 
     module Calc
+        use Util
+        use Matrix
         implicit none
-        integer :: MAX_ITER = 100000
         double precision :: h = 1.0D-5
-        double precision :: TOL = 1.0D-7
     contains
-        subroutine init_random_seed()
-            integer :: i, n, clock
-            integer, allocatable :: seed(:)
-        
-            call RANDOM_SEED(SIZE=n)
-            allocate(seed(n))
-            call SYSTEM_CLOCK(COUNT=clock)
-            seed = clock + 37 * (/ (i - 1, i = 1, n) /)
-            call RANDOM_SEED(PUT=seed)
-            deallocate(seed)
-        end subroutine
-
-!       ===== I/O Metods =====
-        subroutine error(text)
-!           Red Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[31m'//text//''//achar(27)//'[0m'
-        end subroutine
-
-        subroutine warn(text)
-!           Yellow Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[93m'//text//''//achar(27)//'[0m'
-        end subroutine
-
-        subroutine info(text)
-!           Green Text
-            implicit none
-            character(len=*) :: text
-            write (*, *) ''//achar(27)//'[32m'//text//''//achar(27)//'[0m'
-        end subroutine
-
-        subroutine show(var, value)
-!           Violet Text
-            implicit none
-            character(len=*) :: var
-            character(len=24) :: val
-            double precision :: value
-
-10          format(F24.16, '')
-
-            write (val, 10) value
-            write (*, *) ''//achar(27)//'[36m'//var//' = '//val//''//achar(27)//'[0m'
-        end subroutine
-
-        function id_matrix(n) result (A)
-            implicit none
-
-            integer :: n
-            double precision :: A(n, n)
-            integer :: j
-
-            A(:, :) = 0.0D0
-
-            do j = 1, n
-                A(j, j) = 1.0D0
-            end do
-            return
-        end function
-
-        subroutine print_matrix(A, m, n)
-            implicit none
-
-            integer :: m, n
-            double precision :: A(m, n)
-
-            integer :: i, j
-
-20          format(' |', F32.12, ' ')
-21          format(F30.12, '|')
-22          format(F30.12, ' ')
-
-            do i = 1, m
-                do j = 1, n
-                    if (j == 1) then
-                        write(*, 20, advance='no') A(i, j)
-                    elseif (j == n) then
-                        write(*, 21, advance='yes') A(i, j)
-                    else
-                        write(*, 22, advance='no') A(i, j)
-                    end if
-                end do
-            end do
-        end subroutine
-        
-        subroutine read_matrix(fname, A, m, n)
-            implicit none
-            character(len=*) :: fname
-            integer :: m, n
-            double precision, allocatable :: A(:, :)
-
-            integer :: i
-
-            open(unit=33, file=fname, status='old', action='read')
-            read(33, *) m
-            read(33, *) n
-            allocate(A(m, n))
-
-            do i = 1, m
-                read(33,*) A(i,:)
-            end do
-
-            close(33)
-        end subroutine
-
-        subroutine print_vector(x, n)
-            implicit none
-
-            integer :: n
-            double precision :: x(n)
-            
-            integer :: i
-
-30          format(' |', F30.12, '|')
-
-            do i = 1, n
-                write(*, 30) x(i)
-            end do
-        end subroutine
-
-        subroutine read_vector(fname, b, t)
-            implicit none
-            character(len=*) :: fname
-            integer :: t
-            double precision, allocatable :: b(:)
-
-            open(unit=33, file=fname, status='old', action='read')
-            read(33, *) t
-            allocate(b(t))
-
-            read(33,*) b(:)
-
-            close(33)
-        end subroutine
-
-        function NORM(x, n) result (s)
-            implicit none
-
-            integer :: n
-            double precision :: x(n)
-            double precision :: s
-
-            s = SQRT(DOT_PRODUCT(x, x))
-            return
-        end function
-
-!       ================= Matrix Method ====================
-        function inv(A, n) result (Ainv)
-            integer :: n
-            double precision :: A(n, n), Ainv(n, n)
-            double precision :: work(n)
-            integer :: ipiv(n)   ! pivot indices
-            integer :: info
-          
-            ! External procedures defined in LAPACK
-            external DGETRF
-            external DGETRI
-          
-            ! Store A in Ainv to prevent it from being overwritten by LAPACK
-            Ainv(:, :) = A(:, :)
-          
-            ! DGETRF computes an LU factorization of a general M-by-N matrix A
-            ! using partial pivoting with row interchanges.
-            call DGETRF(n, n, Ainv, n, ipiv, info)
-          
-            if (info /= 0) then
-                call print_matrix(A, n, n)
-                stop 'Matrix is numerically singular!'
-            end if
-          
-            ! DGETRI computes the inverse of a matrix using the LU factorization
-            ! computed by DGETRF.
-            call DGETRI(n, Ainv, n, ipiv, work, n, info)
-          
-            if (info /= 0) then
-                call print_matrix(A, n, n)
-                stop 'Matrix inversion failed!'
-            end if
-
-            return
-        end function
-
-        recursive subroutine cross_quick_sort(x, y, u, v, n)
-            integer :: n, i, j, u, v
-            double precision :: p, aux, auy
-            double precision :: x(n), y(n)
-
-            i = u
-            j = v
-
-            p = x((u + v) / 2)
-
-            do while (i <= j)
-                do while (x(i) < p)
-                    i = i + 1
-                end do
-                do while(x(j) > p)
-                    j = j - 1
-                end do
-                if (i <= j) then
-                    aux = x(i)
-                    auy = y(i)
-                    x(i) = x(j)
-                    y(i) = y(j)
-                    x(j) = aux
-                    y(j) = auy
-                    i = i + 1
-                    j = j - 1
-                end if
-            end do
-
-            if (u < j) then
-                call cross_quick_sort(x, y, u, j, n)
-            end if
-            if (i < v) then
-                call cross_quick_sort(x, y, i, v, n)
-            end if
-
-            return
-        end subroutine
-
-        subroutine cross_sort(x, y, n)
-            implicit none
-            integer :: n
-            double precision :: x(n), y(n)
-            
-            call cross_quick_sort(x, y, 1, n, n)
-        end subroutine
-
-        function DRAND(a, b) result (y)
-            implicit none
-            double precision :: a, b, x, y
-            ! x in [0, 1)            
-            call RANDOM_NUMBER(x)
-            y = (x * (b - a)) + a
-            return
-        end function
-
-        function outer_product(x, y, n) result(A)
-            implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: x, y
-            double precision, dimension(n, n) :: A
-            integer :: i, j
-
-            do i=1,n
-                do j=1,n
-                    A(i, j) = x(i) * y(j)
-                end do
-            end do
-            return
-        end function
-
 !       ================= Numerical Mathods =================
-
-        function d(f, x) result (y)
+        function d(f, x, kind) result (y)
             implicit none
-            double precision :: f
-            double precision :: x, y
-        
-            y = (f(x + h) - f(x - h)) / (2 * h)
+            character (len=*), optional :: kind
+            double precision, intent(in) :: x
+            double precision :: y
+            interface
+                function f(x) result (y)
+                    implicit none
+                    double precision, intent(in) :: x
+                    double precision :: y
+                end function
+            end interface
+
+            if (.NOT. PRESENT(kind)) then
+                kind = "central"
+            end if
+
+            if (kind == "central") then
+                y = (f(x + h) - f(x - h)) / (2 * h)
+            else if (kind == "forward") then
+                y = (f(x + h) - f(x)) / h
+            else if (kind == "backward") then
+                y = (f(x) - f(x - h)) / h
+            else 
+                call error("Unexpected value `"//kind//" for derivative kind."// &
+                "Options are: `central`, `forward` and `backward`.")
+            end if
             return
         end function
 
@@ -458,6 +223,7 @@
             double precision, dimension(n) :: x, xk, dx
             double precision :: J(n, n) 
             integer :: k
+            logical :: ok = .TRUE.
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -478,10 +244,13 @@
 
             do k=1, MAX_ITER
                 J(:, :) = dff(xk, n)
-                dx(:) = -MATMUL(inv(J, n), ff(xk, n))
+                dx(:) = -MATMUL(inv(J, n, ok), ff(xk, n))
                 x(:) = xk(:) + dx(:)
-
-                if ((NORM(dx, n) / NORM(x, n)) > TOL) then
+                
+                if (.NOT. ok) then
+                    call error("Tentativa de inversão de matriz singular.")
+                    exit
+                else if ((NORM(dx, n) / NORM(x, n)) > TOL) then
                     xk(:) = x(:)
                 else
                     return
@@ -499,6 +268,7 @@
             double precision, dimension(n):: x, xk, xh, dx, y
             double precision, dimension(n, n) :: J
             integer :: i, k
+            logical :: ok = .TRUE.
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -521,10 +291,13 @@
                 end do
 
                 y(:) = ff(xk, n)
-                dx(:) = -matmul(inv(J, n), y)
+                dx(:) = -matmul(inv(J, n, ok), y)
                 x(:) = xk(:) + dx(:)
 
-                if ((NORM(dx, n) / NORM(x, n)) > TOL) then
+                if (.NOT. ok) then
+                    call error("Tentativa de inversão de matriz singular.")
+                    exit
+                else if ((NORM(dx, n) / NORM(x, n)) > TOL) then
                     xk(:) = x(:)
                 else
                     return
@@ -542,6 +315,7 @@
             double precision, dimension(n) :: x, xk, yk, dx
             double precision, dimension(n, n) :: J, Bk
             integer :: k
+            logical :: ok = .TRUE.
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -555,10 +329,13 @@
 
             do k=1, MAX_ITER
                 J(:, :) = Bk(:, :)
-                dx(:) = -MATMUL(inv(J, n), ff(xk, n))
+                dx(:) = -MATMUL(inv(J, n, ok), ff(xk, n))
                 x(:) = xk(:) + dx(:)
                 yk(:) = ff(x, n) - ff(xk, n)
-                if ((norm(dx, n) / norm(x, n)) > TOL) then
+                if (.NOT. ok) then
+                    call error("Tentativa de inversão de matriz singular.")
+                    exit
+                else if ((norm(dx, n) / norm(x, n)) > TOL) then
                     Bk(:, :) = Bk(:, :) + (outer_product(yk(:) - MATMUL(Bk, dx), dx, n)  /  DOT_PRODUCT(dx, dx))
                     xk(:) = x(:)
                 else
@@ -569,38 +346,46 @@
             return
         end function
 
-        function sys_least_squares(ff, dff, xx0, n) result (x)
+        function sys_least_squares(ff, dff, x, y, b0, m, n) result (b)
             implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: xx0
-            double precision, dimension(n) :: x, xk, dx
+            integer :: m, n
+            double precision, dimension(n), intent(in) :: x, y, b0
+            double precision, dimension(n) :: b, bk, db
             double precision :: J(n, n) 
             integer :: k
+            logical :: ok = .TRUE.
             interface
-                function ff(x, n) result (y)
+                function ff(x, b, m, n) result (z)
                     implicit none
-                    integer :: n
-                    double precision :: x(n), y(n)
+                    integer :: m, n
+                    double precision, dimension(n), intent(in) :: x
+                    double precision, dimension(m), intent(in) :: b
+                    double precision, dimension(n) :: z
                 end function
             end interface
 
             interface
-                function dff(x, n) result (J)
+                function dff(x, b, m, n) result (J)
                     implicit none
-                    integer :: n
-                    double precision :: x(n), J(n, n)
+                    integer :: m, n
+                    double precision, dimension(n), intent(in) :: x
+                    double precision, dimension(m), intent(in) :: b
+                    double precision, dimension(n, m) :: J
                 end function
             end interface
 
-            xk(:) = xx0(:)
+            bk(:) = b0(:)
 
             do k=1, MAX_ITER
-                J(:, :) = dff(xk, n)
-                dx(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n), MATMUL(TRANSPOSE(J), ff(xk, n)))
-                x(:) = xk(:) + dx(:)
+                J(:, :) = dff(x, b, m, n)
+                db(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, bk, m, n) - y))
+                b(:) = bk(:) + db(:)
 
-                if ((NORM(dx, n) / NORM(x, n)) > TOL) then
-                    xk(:) = x(:)
+                if (.NOT. ok) then
+                    call error("Tentativa de inversão de matriz singular.")
+                    exit
+                else if ((NORM(db, m) / NORM(b, m)) > TOL) then
+                    bk(:) = b(:)
                 else
                     return
                 end if
@@ -609,44 +394,89 @@
             return
         end function
 
-        function sys_least_squares_num(ff, xx0, n) result (x)
-!           Same as previous function, with numerical partial derivatives            
+        function sys_least_squares_num(ff, x, y, b0, m, n) result (b)
+!           Same as previous function, with numerical partial derivatives
             implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: xx0
-            double precision, dimension(n):: x, xk, xh, dx
-            double precision, dimension(n, n) :: J
+            integer :: m, n
+            double precision, dimension(n), intent(in) :: x, y, b0
+            double precision, dimension(n) :: b, bk, db, bh
+            double precision :: J(n, n) 
             integer :: i, k
+            logical :: ok = .TRUE.
             interface
-                function ff(x, n) result (y)
+                function ff(x, b, m, n) result (z)
                     implicit none
-                    integer :: n
-                    double precision :: x(n), y(n)
+                    integer :: m, n
+                    double precision, dimension(n), intent(in) :: x
+                    double precision, dimension(m), intent(in) :: b
+                    double precision, dimension(n) :: z
                 end function
             end interface
 
-            xh(:) = 0.0D0
-            xk(:) = xx0(:)
+            bh(:) = 0.0D0
+            bk(:) = b0(:)
 
             do k=1, MAX_ITER
 !               Compute Jacobian Matrix
-                J(:, :) = 0.0D0
-                do i=1, n
+                do i=1, m
 !                   Partial derivative with respect do the i-th coordinates                    
-                    xh(i) = h
-                    J(:, i) = (ff(x(:) + xh(:), n) - ff(x(:) - xh(:), n)) / (2 * h)
-                    xh(i) = 0.0D0
+                    bh(i) = h
+                    J(:, i) = (ff(x, b(:) + bh(:), m, n) - ff(x, b(:) - bh(:), m, n)) / (2 * h)
+                    bh(i) = 0.0D0
                 end do
-                dx(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n), MATMUL(TRANSPOSE(J), ff(xk, n)))
-                x(:) = xk(:) + dx(:)
+                db(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, bk, m, n) - y))
+                b(:) = bk(:) + db(:)
 
-                if ((NORM(dx, n) / NORM(x, n)) > TOL) then
-                    xk(:) = x(:)
+                if (.NOT. ok) then
+                    call error("Tentativa de inversão de matriz singular.")
+                    exit
+                else if ((NORM(db, m) / NORM(b, m)) > TOL) then
+                    bk(:) = b(:)
                 else
                     return
                 end if
             end do
+
             call error("O Método (Não-Linear) de Mínimos Quadrados não convergiu. (Derivada Numérica)")
+            return
+        end function
+
+!       ============ Numerical Integration ========
+        function polynomial_int(f, a, b) result (s)
+            implicit none
+            double precision :: a, b, s
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+
+            
+            return
+        end function
+
+        function gauss_quad_int(f, a, b) result (s)
+            implicit none
+            double precision :: a, b, s
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+            return
+        end function
+
+        function gauss_hermite_quad_int(f, a, b) result (s)
+            implicit none
+            double precision :: a, b, s
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
             return
         end function
     end module Calc

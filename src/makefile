@@ -7,17 +7,18 @@ blas = -llapack -lblas
 
 all: matrix1 matrix2 matrix3 calc1
 
-matrix1: matrixlib.o main1.o
-	$(f95c) -o matrix1 $(args) matrixlib.o main1.o
+matrix1: utillib.o matrixlib.o main1.o
+	$(f95c) -o matrix1 $(args) utillib.o matrixlib.o main1.o
 
-matrix2: matrixlib.o main2.o
-	$(f95c) -o matrix2 $(args) matrixlib.o main2.o
+matrix2: utillib.o matrixlib.o main2.o
+	$(f95c) -o matrix2 $(args) utillib.o matrixlib.o main2.o
 
-matrix3: matrixlib.o main3.o
-	$(f95c) -o matrix3 $(args) matrixlib.o main3.o
+matrix3: utillib.o matrixlib.o main3.o
+	$(f95c) -o matrix3 $(args) utillib.o matrixlib.o main3.o
 
-calc1: calclib.o funcmod.o main4.o
-	$(f95c) -o calc1 $(args) calclib.o funcmod.o main4.o $(blas)
+calc1: utillib.o matrixlib.o calclib.o funcmod.o main4.o
+	$(f95c) -o calc1 $(args) utillib.o matrixlib.o calclib.o funcmod.o main4.o $(blas)
+
 %.mod: %.o %.f95
 	$(f95c) -c $(args) $<
 

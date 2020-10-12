@@ -1,22 +1,22 @@
 program main4
     use Func
     use Calc
-
+    use Util
     implicit none
 
 !   Command-line Args
     integer :: argc
 
 !   character(len=32) :: 
-    integer :: i = 0
+    integer :: i = 0, j = 0
 
 !   R -> R
     double precision :: x, y, a, b, x0
     double precision, dimension(:), allocatable :: x123
 
 !   R^3 -> R^3
-    double precision, dimension(:), allocatable :: xx(:), yy(:), xx0(:)
-    double precision, dimension(:, :), allocatable :: B0(:, :)
+    double precision, dimension(:), allocatable :: xx(:), yy(:), bb(:), xx0(:), bb0(:)
+    double precision, dimension(:, :), allocatable :: J0(:, :)
 
 !   Random seed definition
     call init_random_seed()
@@ -43,35 +43,26 @@ program main4
 200 call info(':: Zeros de funções ::')
 !   Renew go to counter
     i = 0
-    goto 210
+    goto 201
 
-210 i = i + 1
+201 i = i + 1
     call info('')
-    go to (211, 212, 300), i
+    go to (210, 220, 300), i
 
 300 call info(":: Sistemas não-lineares ::")
 !   Renew go to counter
     i = 0
-    goto 310
+    goto 301
 
-310 i = i + 1
+301 i = i + 1
     write(*, *)
-    go to (311, 400), i
+    go to (310, 320, 330, 400), i
 
-400 call info(":: Integração Numérica ::")
-!   Renew go to counter
-    i = 0
-    goto 401
-
-401 i = i + 1
-    write(*, *)
-    go to (500), i
-
-500 goto 100
+400 goto 100
 !   Bissection
 
 !   ======= Function zeros =============
-211 call info("1) "//F1_NAME)
+210 call info("1) "//F1_NAME)
     call info(": Método da Bissecção :")
 !   == Bounds definition ==
     a = -1000.0D0
@@ -84,28 +75,6 @@ program main4
     call show('y', y)
 !   =======================
     
-    call info(": Método de Newton (Zero de função) :")
-!   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-    x = newton(f1, df1, x0)
-    y = f1(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
-    call info("Secante:")
-!   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-    x = secant(f1, x0)
-    y = f1(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
     call info(": Método de Newton (Zero de função) :")
 !   == Bounds definition ==
     x0 = DRAND(0.0D0, b)
@@ -139,10 +108,10 @@ program main4
     call show('x', x)
     call show('y', y)
 !   =======================
-    deallocate(x123)
-    goto 210
+!   deallocate(x123)
+    goto 201
 
-212 call info("2) "//F2_NAME)
+220 call info("2) "//F2_NAME)
     call info(": Método da Bissecção :")
 !   == Bounds definition ==
     a = -1000.0D0
@@ -155,28 +124,6 @@ program main4
     call show('y', y)
 !   =======================
     
-    call info(": Método de Newton (Zero de função) :")
-!   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-    x = newton(f2, df2, x0)
-    y = f2(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
-    call info("Secante:")
-!   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-    x = secant(f2, x0)
-    y = f2(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
     call info(": Método de Newton (Zero de função) :")
 !   == Bounds definition ==
     x0 = DRAND(0.0D0, b)
@@ -201,7 +148,7 @@ program main4
 
     call info("Interpolação Inversa:")
 !   == Bounds definition ==
-    allocate(x123(3))
+!   allocate(x123(3))
     x123 = (/2.0D0, 5.0D0, 15.0D0/)
 !   == Algorithm run ======
     x = inv_interp(f2, x123)
@@ -211,78 +158,200 @@ program main4
     call show('y', y)
 !   =======================
     deallocate(x123)
-    goto 210
+    goto 201
 
-311 call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
+310 call info('3) '//F3_NAME)
+    call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
 !   == Bounds definition ==
     allocate(xx0(3))
     allocate(xx(3))
     allocate(yy(3))
-    xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    xx0 = (/ &
+        -0.8315537061190D0, &
+        -0.0852250901010D0, &
+         0.3631122375950D0 &
+    /)
 !   == Algorithm run ======
     xx = sys_newton(ff1, dff1, xx0, 3)
     yy = ff1(xx, 3)
-!   == Results ============    
-    call info('')
-    call info('x  = ')
-    call print_vector(xx, 3)
-    call info('')
-    call info('y  = ')
-    call print_vector(yy, 3)
-    call info('')
+!   == Results ============
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
 !   =======================
-    deallocate(xx0)
-    deallocate(xx)
-    deallocate(yy)
+!   deallocate(xx0)
+!   deallocate(xx)
+!   deallocate(yy)
 !   =======================
     
     call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
 !   == Bounds definition ==
-    allocate(xx0(3))
-    allocate(xx(3))
-    allocate(yy(3))
-    xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+!   allocate(xx0(3))
+!   allocate(xx(3))
+!   allocate(yy(3))
+!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
 !   == Algorithm run ======
     xx = sys_newton_num(ff1, xx0, 3)
     yy = ff1(xx, 3)
 !   == Results ============    
-    call info('')
-    call info('x  = ')
-    call print_vector(xx, 3)
-    call info('')
-    call info('y  = ')
-    call print_vector(yy, 3)
-    call info('')
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
 !   =======================
-    deallocate(xx0)
+!   deallocate(xx0)
     deallocate(xx)
     deallocate(yy)
 !   ======================= 
 
     call info(": Método de Broyden :")
 !   == Bounds definition ==
-    allocate(B0(3, 3))
-    allocate(xx0(3))
-    allocate(xx(3))
-    allocate(yy(3))
-    B0 = id_matrix(3)
-    xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    allocate(J0(3, 3))
+!   allocate(xx0(3))
+!   allocate(xx(3))
+!   allocate(yy(3))
+    J0 = id_matrix(3)
+!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
 !   == Algorithm run ======
-    xx = sys_broyden(ff1, xx0, B0, 3)
+    xx = sys_broyden(ff1, xx0, J0, 3)
     yy = ff1(xx, 3)
 !   == Results ============    
-    call info('')
-    call info('x  = ')
-    call print_vector(xx, 3)
-    call info('')
-    call info('y  = ')
-    call print_vector(yy, 3)
-    call info('')
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
 !   =======================
-    deallocate(B0)
+!   deallocate(J0)
+!   deallocate(xx0)
+!   deallocate(xx)
+!   deallocate(yy)
+!   =======================
+    goto 301
+
+320 call info('4) '//F4_NAME)
+    j = 0
+    goto 321
+
+321 j = j + 1
+    goto (322, 323, 324, 301), j
+
+322 t1 = 0.00D0
+    t2 = 3.00D0
+    call show('t1', t1)
+    call show('t2', t2)
+    goto 325
+
+323 t1 = 0.75D0
+    t2 = 6.50D0
+    call show('t1', t1)
+    call show('t2', t2)
+    goto 325
+
+324 t1 =  0.000D0
+    t2 = 11.667D0
+    call show('t1', t1)
+    call show('t2', t2)
+    goto 325
+
+325 call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
+!   == Bounds definition ==
+!   allocate(xx0(3))
+!   allocate(xx(3))
+!   allocate(yy(3))
+    xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+!   == Algorithm run ======
+    xx = sys_newton(ff2, dff2, xx0, 3)
+    yy = ff2(xx, 3)
+!   == Results ============    
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
+!   =======================
+!   deallocate(xx0)
+!   deallocate(xx)
+!   deallocate(yy)
+!   =======================
+    
+    call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
+!   == Bounds definition ==
+!   allocate(xx0(3))
+!   allocate(xx(3))
+!   allocate(yy(3))
+!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+!   == Algorithm run ======
+    xx = sys_newton_num(ff2, xx0, 3)
+    yy = ff2(xx, 3)
+!   == Results ============    
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
+!   =======================
+!   deallocate(xx0)
+!   deallocate(xx)
+!   deallocate(yy)
+!   ======================= 
+
+    call info(": Método de Broyden :")
+!   == Bounds definition ==
+!   allocate(J0(3, 3))
+!   allocate(xx0(3))
+!   allocate(xx(3))
+!   allocate(yy(3))
+    J0 = id_matrix(3)
+!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+!   == Algorithm run ======
+    xx = sys_broyden(ff2, xx0, J0, 3)
+    yy = ff2(xx, 3)
+!   == Results ============    
+    call show_vector('x0', xx0, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
+!   =======================
+    deallocate(J0)
     deallocate(xx0)
     deallocate(xx)
     deallocate(yy)
 !   =======================
-    goto 310
+    goto 321
+
+330 call info("5) "//F5_NAME)
+!   ===============
+    allocate(xx(3))
+    allocate(yy(3))
+    allocate(bb(3))
+    allocate(bb0(3))
+!   ===============================
+    xx(:) = (/1.0D0, 2.0D0, 3.0D0/)
+    yy(:) = (/1.0D0, 2.0D0, 9.0D0/)
+
+    ! bb0(:) = (/ &
+    !     DRAND(-1.0D0, 1.0D0), &
+    !     DRAND(-1.0D0, 1.0D0), &
+    !     DRAND(-1.0D0, 1.0D0) &
+    ! /)
+
+    bb0 = (/ &
+         0.006786379718D0, &
+        -0.906357904393D0, &
+        -0.466847776037D0 &
+    /)
+
+    call info(": Método não-linear de Mínimos Quadrados :")
+    bb(:) = sys_least_squares(ff5, dff5, xx, yy, bb0, 3, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
+    call show_vector('b0', bb0, 3)
+    call show_vector('b', bb, 3)
+
+    call info(": Método não-linear de Mínimos Quadrados [Derivadas Numéricas]:")
+    bb(:) = sys_least_squares_num(ff5, xx, yy, bb0, 3, 3)
+    call show_vector('x', xx, 3)
+    call show_vector('y', yy, 3)
+    call show_vector('b0', bb0, 3)
+    call show_vector('b', bb, 3)
+!   =========================
+    deallocate(xx)
+    deallocate(yy)
+    deallocate(bb)
+    deallocate(bb0)
+!   =========================
+    goto 301
 end program main4
