@@ -14,6 +14,16 @@
             call error('Matriz mal-condicionada: este método não irá convergir.')
         end subroutine
 
+        subroutine show_matrix(var, A, m, n)
+            implicit none
+            integer :: m, n
+            character(len=*) :: var
+            double precision, dimension(m, n), intent(in) :: A
+            write (*, *) ''//achar(27)//'[36m'//var//' = '
+            call print_matrix(A, m, n)
+            write (*, *) ''//achar(27)//'[0m'
+        end subroutine
+
         subroutine print_matrix(A, m, n)
             implicit none
             integer :: m, n
@@ -39,7 +49,7 @@
             implicit none
             character(len=*) :: fname
             integer :: m, n
-            double precision, allocatable :: A(:, :)
+            double precision, dimension(:, :), allocatable :: A
             integer :: i
             open(unit=33, file=fname, status='old', action='read')
             read(33, *) m
@@ -73,6 +83,16 @@
             allocate(b(n))
             read(33, *) b(:)
             close(33)
+        end subroutine
+
+        subroutine show_vector(var, x, n)
+            implicit none
+            integer :: n
+            character(len=*) :: var
+            double precision :: x(n)
+            write (*, *) ''//achar(27)//'[36m'//var//' = '
+            call print_vector(x, n)
+            write (*, *) ''//achar(27)//'[0m'
         end subroutine
 
 
@@ -132,6 +152,17 @@
             return
         end function
 
+        function vandermond_matrix(x, n) result (V)
+            implicit none
+            integer :: n, i
+            double precision, dimension(n), intent(in) :: x
+            double precision, dimension(n, n) :: V
+            V(1, :) = 1.0D0
+            do i=2, n
+                V(i, :) = V(i-1, :) * x(:)
+            end do
+            return
+        end function
 
         function diagonally_dominant(A, n) result (ok)
             implicit none
@@ -847,6 +878,120 @@
             b(2) = dot_product(x, y)
 
             ok = Cholesky_solve(A, s, r, b, n)
+            return
+        end function
+
+!       ========== Extra Stuff ========     
+        
+        function Gauss_solve(A0, x, b0, n) result (ok)
+            implicit none 
+            integer n
+            double precision, dimension(n, n), intent(in) :: A0
+            double precision, dimension(n, n) :: A
+            double precision, dimension(n), intent(in) :: b0
+            double precision, dimension(n) :: b, x, s
+            double precision :: c, pivot, store
+            integer i, j, k, l
+
+            logical :: ok
+            
+            ok = .TRUE.
+            
+            A(:, :) = A0(:, :)
+            b(:) = b0(:)
+
+            do k=1, n-1
+                do i=k,n
+                    s(i) = 0.0
+                    do j=k,n
+                        s(i) = MAX(s(i), DABS(A(i,j)))
+                    end do
+                end do
+            
+                pivot = DABS(A(k,k) / s(k))
+                l = k
+                do j=k+1,n
+                    if(DABS(A(j,k) / s(j)) > pivot) then
+                        pivot = DABS(A(j,k) / s(j))
+                        l = j
+                    end if
+                end do
+            
+                if(pivot == 0.0) then
+                    ok = .FALSE.
+                    return
+                end if
+            
+                if (l /= k) then
+                    do j=k,n
+                        store = A(k,j)
+                        A(k,j) = A(l,j)
+                        A(l,j) = store
+                    end do
+                    store = b(k)
+                    b(k) = b(l)
+                    b(l) = store
+                end if
+            
+                do i=k+1,n
+                    c = A(i,k) / A(k,k)
+                    A(i,k) = 0.0D0
+                    b(i) = b(i)- c*b(k)
+                    do j=k+1,n
+                        A(i,j) = A(i,j) - c * A(k,j)
+                    end do
+                end do
+            end do
+            
+            x(n) = b(n) / A(n,n)
+            do i=n-1,1,-1
+                c = 0.0D0
+                do j=i+1,n
+                    c = c + A(i,j) * x(j)
+                end do 
+                x(i) = (b(i)- c) / A(i,i)
+            end do
+            
+            return
+        end function
+            
+        function solve(A, b, n, kind) result (x)
+            implicit none
+            integer :: n
+            double precision, dimension(n), intent(in) :: b
+            double precision, dimension(n) :: x, y
+            double precision, dimension(n, n), intent(in) :: A
+            character(len=*), optional :: kind
+            character(len=:), allocatable :: t_kind
+
+            logical :: ok = .TRUE.
+
+            if (.NOT. PRESENT(kind)) then
+                call debug("Indeed, not present.")
+                t_kind = "gauss"
+            else
+                t_kind = kind
+            end if
+
+            call debug("Now it is: "//t_kind)
+            if (t_kind == "LU") then
+                ok = LU_solve(A, x, y, b, n)
+            else if (t_kind == "PLU") then
+                ok = PLU_solve(A, x, y, b, n)
+            else if (t_kind =="cholesky") then
+                ok = Cholesky_solve(A, x, y, b, n)
+            else if (t_kind =="gauss") then
+                ok = Gauss_solve(A, x, b, n)
+            else
+                ok = .FALSE.
+            end if
+
+            call debug(":: Solved via `"//t_kind//"` ::")
+
+            if (.NOT. ok) then
+                call error("Failed to solve system Ax = b.")
+            end if
+
             return
         end function
         

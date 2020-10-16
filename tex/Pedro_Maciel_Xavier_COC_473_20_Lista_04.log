@@ -1,4 +1,4 @@
-This is LuaTeX, Version 1.10.0 (TeX Live 2019/W32TeX)  (format=lualatex 2020.3.31)  29 SEP 2020 19:35
+This is LuaTeX, Version 1.10.0 (TeX Live 2019/W32TeX)  (format=lualatex 2020.3.31)  15 OCT 2020 21:03
  restricted system commands enabled.
 **Pedro_Maciel_Xavier_COC_473_20_Lista_04.tex
 (./Pedro_Maciel_Xavier_COC_473_20_Lista_04.tex
@@ -1049,32 +1049,83 @@ ur preamble.
 [1
 
 {c:/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 13--13
+Underfull \hbox (badness 10000) in paragraph at lines 12--13
 
  []
 
-[2] [3] (./Pedro_Maciel_Xavier_COC_473_20_Lista_04.aux))
+[2]
+Underfull \hbox (badness 10000) in paragraph at lines 14--15
+
+ []
+
+[3]
+Underfull \hbox (badness 10000) in paragraph at lines 20--21
+
+ []
+
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 22--23
+
+ []
+
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 28--29
+
+ []
+
+[6]
+LaTeX Font Info:    Trying to load font information for U+msa on input line 34.
+ (c:/texlive/2019/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 34.
+
+(c:/texlive/2019/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+LaTeX Font Info:    Trying to load font information for U+rsfs on input line 34.
+
+
+(c:/texlive/2019/texmf-dist/tex/latex/jknapltx/ursfs.fd
+File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
+)
+Underfull \hbox (badness 10000) in paragraph at lines 34--35
+
+ []
+
+[7]
+Underfull \hbox (badness 10000) in paragraph at lines 37--38
+
+ []
+
+[8] [9] (./Pedro_Maciel_Xavier_COC_473_20_Lista_04.aux))
 
 Here is how much of LuaTeX's memory you used:
- 30186 strings out of 481351
+ 30262 strings out of 481351
  125016,1144653 words of node,token memory allocated
- 561 words of node memory still in use:
-   7 hlist, 2 vlist, 2 rule, 5 glue, 4 kern, 1 glyph, 11 attribute, 58 glue_spec
-, 8 attribute_list, 2 write nodes
-   avail lists: 1:8,2:83,3:7,4:8,5:25,6:4,7:114,9:16,10:4,11:5
- 46333 multiletter control sequences out of 65536+600000
- 33 fonts using 3652107 bytes
+ 581 words of node memory still in use:
+   7 hlist, 2 vlist, 2 rule, 5 glue, 4 kern, 1 glyph, 18 attribute, 58 glue_spec
+, 11 attribute_list, 2 write nodes
+   avail lists: 1:8,2:73,3:24,4:8,5:40,6:4,7:246,8:26,9:27,10:4,11:20
+ 46363 multiletter control sequences out of 65536+600000
+ 58 fonts using 4900139 bytes
  71i,5n,102p,831b,245s stack positions out of 5000i,500n,10000p,200000b,100000s
-<c:/texlive/2019/texmf-dist/fonts/opentype/public/lm/lmroman10-regular.otf><c:/t
-exlive/2019/texmf-dist/fonts/opentype/public/lm/lmroman12-regular.otf><c:/texliv
-e/2019/texmf-dist/fonts/opentype/public/lm/lmmono12-regular.otf><c:/texlive/2019
-/texmf-dist/fonts/opentype/public/lm/lmroman17-regular.otf><c:/texlive/2019/texm
-f-dist/fonts/opentype/public/lm/lmroman12-bold.otf>
-Output written on Pedro_Maciel_Xavier_COC_473_20_Lista_04.pdf (3 pages, 14790 by
+<c:/texlive/2019/texmf-dist/fonts/opentype/public/lm/lmroman12-italic.otf><c:/te
+xlive/2019/texmf-dist/fonts/opentype/public/lm/lmroman10-regular.otf><c:/texlive
+/2019/texmf-dist/fonts/opentype/public/lm/lmroman12-regular.otf><c:/texlive/2019
+/texmf-dist/fonts/opentype/public/lm/lmmono12-regular.otf><c:/texlive/2019/texmf
+-dist/fonts/opentype/public/lm/lmroman17-regular.otf><c:/texlive/2019/texmf-dist
+/fonts/opentype/public/lm/lmroman12-bold.otf><c:/texlive/2019/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2019/texmf-dist/fonts/type1/publi
+c/amsfonts/cm/cmmi10.pfb><c:/texlive/2019/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmmi12.pfb><c:/texlive/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.
+pfb><c:/texlive/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/tex
+live/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
+Output written on Pedro_Maciel_Xavier_COC_473_20_Lista_04.pdf (9 pages, 72649 by
 tes).
 
-PDF statistics: 52 PDF objects out of 1000 (max. 8388607)
- 31 compressed objects within 1 object stream
+PDF statistics: 101 PDF objects out of 1000 (max. 8388607)
+ 65 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 131072)
  16 words of extra memory for PDF output out of 10000 (max. 100000000)
 
