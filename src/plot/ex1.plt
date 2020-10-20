@@ -1,16 +1,27 @@
  #plot/ex1.pdf
-set size 1,1
 set terminal pdf
 set output "plot/ex1.pdf"
-set title "y'(t) = -2 t (y)²; y(0) = 1"
+
 set grid
-set xlabel "t"
-set ylabel "y(t)"
-xydata = "plot/ex1.dat"
+set xlabel "x"
+set ylabel "y"
 
-plot xydata u 1:2 t "Euler" with lines,\
- "" u 1:3 t "Runge-Kutta II" with lines,\
- "" u 1:4 t "Runge-Kutta IV" with lines,\
-  "" u 1:5 t "y(t)" dashtype '.-_' with lines
+h = 1.0;
+n = 3.0;
 
-plot x t "f(x) = x" with lines
+set multiplot;                          # get into multiplot mode
+
+set size 1, (h / n);  
+##
+set origin 0.0,(0.0 * h);
+set title "y = sin(x)";
+plot sin(x); 
+##
+set origin 0.0,((1.0/n) * h);
+set title "y = cos(x)";
+plot cos(x);
+##
+set origin 0.0,((2.0/n) * h);
+set title "y = tan(x)";
+plot tan(x);
+unset multiplot                         # exit multiplot mode

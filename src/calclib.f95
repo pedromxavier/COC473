@@ -136,14 +136,15 @@
             return
         end function
 
-        function newton(f, df, x0) result (x)
+        function newton(f, df, x0, ok) result (x)
             implicit none
             integer :: i
-
             double precision :: f, df
             double precision, intent(in) :: x0
             double precision :: x, xk
+            logical :: ok
 
+            ok = .TRUE.
             xk = x0
 
             do i = 1, MAX_ITER
@@ -154,22 +155,25 @@
                     return
                 end if 
             end do
-            call error("O método de Newton não convergiu.")
+            ok = .FALSE.
             return
         end function
 
-        function secant(f, x0) result (x)
+        function secant(f, x0, ok) result (x)
             implicit none
             integer :: i
             double precision :: xk(3), yk(2)
             double precision, intent(in) :: x0
             double precision :: x
+            logical :: ok
             interface
                 function f(x) result (y)
                     implicit none
                     double precision :: x, y
                 end function
             end interface
+
+            ok = .TRUE.
 
             xk(1) = x0
             xk(2) = x0 + h
@@ -185,12 +189,11 @@
                     return
                 end if 
             end do
-
-            call error("O método da Secante não convergiu.")
+            ok = .FALSE.
             return
         end function
 
-        function inv_interp(f, x00) result (x)
+        function inv_interp(f, x00, ok) result (x)
             implicit none
             double precision :: f
             double precision :: x, xk
@@ -198,9 +201,12 @@
             double precision :: x0(3), y0(3)
             integer :: i, k
             integer :: j(1)
+            logical :: ok
 
             x0(:) = x00(:)
             xk = 1.0D+32
+
+            ok = .TRUE.
 
             do k = 1, MAX_ITER
                 call cross_sort(x0, y0, 3)
@@ -222,20 +228,18 @@
                     return
                 end if
             end do
-
-            call error("O Método de Interpolação Inversa não convergiu.")
-
+            ok = .FALSE.
             return
         end function
 
-        function sys_newton(ff, dff, xx0, n) result (x)
+        function sys_newton(ff, dff, xx0, n, ok) result (x)
             implicit none
             integer :: n
             double precision, dimension(n), intent(in) :: xx0
             double precision, dimension(n) :: x, xk, dx
             double precision :: J(n, n) 
             integer :: k
-            logical :: ok = .TRUE.
+            logical :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -251,6 +255,8 @@
                     double precision :: x(n), J(n, n)
                 end function
             end interface
+
+            ok = .TRUE.
 
             xk(:) = xx0(:)
 
@@ -272,7 +278,7 @@
             return
         end function
 
-        function sys_newton_num(ff, xx0, n) result (x)
+        function sys_newton_num(ff, xx0, n, ok) result (x)
 !           Same as previous function, with numerical partial derivatives            
             implicit none
             integer :: n
@@ -280,7 +286,7 @@
             double precision, dimension(n):: x, xk, xh, dx, y
             double precision, dimension(n, n) :: J
             integer :: i, k
-            logical :: ok = .TRUE.
+            logical :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -288,6 +294,8 @@
                     double precision :: x(n), y(n)
                 end function
             end interface
+
+            ok = .TRUE.
 
             xh(:) = 0.0D0
             xk(:) = xx0(:)
@@ -319,7 +327,7 @@
             return
         end function
 
-        function sys_broyden(ff, xx0, B0, n) result (x)
+        function sys_broyden(ff, xx0, B0, n, ok) result (x)
             implicit none
             integer :: n
             double precision, dimension(n), intent(in) :: xx0
@@ -327,7 +335,7 @@
             double precision, dimension(n) :: x, xk, yk, dx
             double precision, dimension(n, n) :: J, Bk
             integer :: k
-            logical :: ok = .TRUE.
+            logical :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -335,6 +343,8 @@
                     double precision :: x(n), y(n)
                 end function
             end interface
+
+            ok = .TRUE.
 
             xk(:) = xx0(:)
             Bk(:, :) = B0(:, :)
@@ -358,14 +368,14 @@
             return
         end function
 
-        function sys_least_squares(ff, dff, x, y, b0, m, n) result (b)
+        function sys_least_squares(ff, dff, x, y, b0, m, n, ok) result (b)
             implicit none
             integer :: m, n
             double precision, dimension(n), intent(in) :: x, y, b0
             double precision, dimension(n) :: b, bk, db
             double precision :: J(n, n) 
             integer :: k
-            logical :: ok = .TRUE.
+            logical :: ok
             interface
                 function ff(x, b, m, n) result (z)
                     implicit none
@@ -388,13 +398,15 @@
 
             bk(:) = b0(:)
 
+            ok = .TRUE.
+
             do k=1, MAX_ITER
                 J(:, :) = dff(x, b, m, n)
                 db(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, bk, m, n) - y))
                 b(:) = bk(:) + db(:)
 
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular.")
+                    call error("Tentativa de inversão de matriz singular. k="//STR(k))
                     exit
                 else if ((NORM(db, m) / NORM(b, m)) > TOL) then
                     bk(:) = b(:)
@@ -406,7 +418,7 @@
             return
         end function
 
-        function sys_least_squares_num(ff, x, y, b0, m, n) result (b)
+        function sys_least_squares_num(ff, x, y, b0, m, n, ok) result (b)
 !           Same as previous function, with numerical partial derivatives
             implicit none
             integer :: m, n
@@ -414,7 +426,7 @@
             double precision, dimension(n) :: b, bk, db, bh
             double precision :: J(n, n) 
             integer :: i, k
-            logical :: ok = .TRUE.
+            logical :: ok
             interface
                 function ff(x, b, m, n) result (z)
                     implicit none
@@ -424,6 +436,8 @@
                     double precision, dimension(n) :: z
                 end function
             end interface
+
+            ok = .TRUE.
 
             bh(:) = 0.0D0
             bk(:) = b0(:)
@@ -461,11 +475,9 @@
             character (len=*) :: fname
             double precision, dimension(k) :: x, w
             double precision, dimension(:, :), allocatable :: xw
-            call debug("Matrix read @"//fname)
             call read_matrix(fname, xw, m, n)
-            call debug("Matrix readed @"//fname)
             if (n /= 2 .OR. m /= k) then
-                call error("Invalid Matrix dimensions. @load_quad")
+                call error("Invalid Matrix dimensions.")
                 stop "ERROR"
             end if
             x(:) = xw(:, 1)
@@ -494,9 +506,11 @@
                 s = gauss_legendre_int(f, a, b, n)
             else if (kind == "gauss-hermite") then
                 s = gauss_hermite_int(f, a, b, n)
+            else if (kind == "romberg") then
+                s = romberg_int(f, a, b, n)
             else 
                 call error("Unknown integration kind `"//kind//"."// &
-                "Available options are: `polynomial`, `gauss-legendre` and `gauss-hermite`.")
+                "Available options are: `polynomial`, `gauss-legendre`, `gauss-hermite` and `romberg`.")
             end if
 
         end function
@@ -578,10 +592,107 @@
             return
         end function
 
-        function dr(f, x, p, q, dx) result (y)
+        recursive function adapt_int(f, a, b, n, acc, kind) result (s)
+            implicit none
+            integer :: n
+            character (len=*), optional :: kind
+            double precision, intent(in) :: a, b
+            double precision, optional :: acc
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+            double precision :: p, q, e, r, s, t_tol
+
+            if (.NOT. PRESENT(acc)) then
+                t_tol = TOL
+            else
+                t_tol = acc
+            end if
+
+            p = num_int(f, a, b, n / 2, kind = kind)
+            q = num_int(f, a, b, n, kind = kind)
+            e = DABS(p - q)
+            if (e <= t_tol) then
+                s = q
+            else
+                r = (b + a) / 2
+                s = adapt_int(f, a, r, n, acc = t_tol, kind = kind) + adapt_int(f, r, b, n, acc = t_tol, kind = kind)
+            end if
+            return
+        end function
+
+        function romberg_int(f, a, b, n, acc) result (s)
+            implicit none
+            integer, intent(in) :: n
+            double precision, intent(in) :: a, b
+            double precision, optional :: acc
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+            integer :: i, j, k, t_n
+            double precision :: p, r, s, dx, t_tol
+!           Previous row, Current row and Temporary row            
+            double precision, dimension(:), allocatable :: RP, RC, RT
+            
+            if (.NOT. PRESENT(acc)) then
+                t_tol = TOL
+            else
+                t_tol = acc
+            end if
+
+            t_n = ILOG2(n)
+
+            allocate(RP(t_n))
+            allocate(RC(t_n))
+            allocate(RT(t_n))
+
+            dx = (b - a)
+
+            RP(1) = (f(a) + f(b)) * (dx / 2)
+
+            do i=2, t_n - 1
+                dx = dx / 2
+
+                r = 0
+                k = 2 ** (i - 1)
+
+                do j = 1, k
+                    r = r + f(a + (2 * j - 1) * dx)
+                end do
+
+                RC(1) = (dx * r) + (RP(1) / 2)
+
+                do j = 1, i
+                    p = 4 ** j
+                    RC(j + 1) = (p * RC(j) - RP(j)) / (p - 1)
+                end do
+
+                if ((i > 2) .AND. (DABS(RP(i - 1) - RC(i)) < acc)) then
+                    RP(t_n) = RC(i - 1)
+                    exit
+                end if 
+
+                RT(:) = RP(:)
+                RP(:) = RC(:)
+                RC(:) = RT(:)
+            end do
+            s = RP(t_n)
+
+            deallocate(RP)
+            deallocate(RC)
+            deallocate(RT)
+            return 
+        end function
+
+        function richard(f, x, p, q, dx, kind) result (y)
 !           Richard Extrapolation
             implicit none
             double precision, optional :: dx
+            character(len=*), optional :: kind
             double precision :: x, y, p, q, t_dx, dx1, dx2, d1, d2
             interface
                 function f(x) result (y)
@@ -597,15 +708,50 @@
             end if
 
             dx1 = t_dx
-            d1 = d(f, x, dx1)
+            d1 = d(f, x, dx1, kind = kind)
             dx2 = dx1 / q
-            d2 = d(f, x, dx2)
+            d2 = d(f, x, dx2, kind = kind)
 
             y = d1 + (d1 - d2) / ((q ** (-p)) - 1.0D0)
             return
         end function
 
 !   ======== Ordinary Differential Equations ==========
+    function ode_solve(df, y0, t, n, kind) result (y)
+        implicit none
+        integer :: n
+        double precision, intent(in) :: y0
+        double precision, dimension(n), intent(in) :: t
+        double precision, dimension(n) :: y
+        character(len=*), optional :: kind
+        character(len=:), allocatable :: t_kind
+        interface
+            function df(t, y) result (u)
+                implicit none
+                double precision :: t, y, u
+            end function
+        end interface
+
+        if (.NOT. PRESENT(kind)) then
+            t_kind = 'euler'
+        else
+            t_kind = kind
+        end if
+
+        if (t_kind == 'euler') then
+            y = euler(df, y0, t, n)
+        else if (t_kind == 'runge-kutta2') then
+            y = runge_kutta2(df, y0, t, n)
+        else if (t_kind == 'runge-kutta4') then
+            y = runge_kutta4(df, y0, t, n)
+        else
+            call error("As opções são: `euler`, `runge-kutta2` e `runge-kutta4`.")
+            stop
+        end if
+        return
+    end function
+
+
     function euler(df, y0, t, n) result (y)
         implicit none
         integer :: k, n
@@ -676,13 +822,45 @@
             y(k) = y(k - 1) + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
         end do
         return
-    end function 
+    end function
+
+    function ode2_solve(d2f, y0, dy0, t, n, kind) result (y)
+        implicit none
+        integer :: n
+        double precision, intent(in) :: y0, dy0
+        double precision, dimension(n), intent(in) :: t
+        double precision, dimension(n) :: y
+        character(len=*), optional :: kind
+        character(len=:), allocatable :: t_kind
+        interface
+            function d2f(t, y, dy) result (u)
+                implicit none
+                double precision :: t, y, dy, u
+            end function
+        end interface
+
+        if (.NOT. PRESENT(kind)) then
+            t_kind = 'taylor'
+        else
+            t_kind = kind
+        end if
+
+        if (t_kind == 'taylor') then
+            y = taylor(d2f, y0, dy0, t, n)
+        else if (t_kind == 'runge-kutta-nystrom') then
+            y = runge_kutta_nystrom(d2f, y0, dy0, t, n)
+        else
+            call error("As opções são: `taylor`, `runge-kutta-nystrom`.")
+            stop
+        end if
+        return
+    end function
 
     function taylor(d2f, y0, dy0, t, n) result (y)
         implicit none
         integer :: k, n
         double precision, intent(in) :: y0, dy0
-        double precision :: k1, k2, k3, k4, dt, dy, d2y
+        double precision :: dt, dy, d2y
         double precision, dimension(n), intent(in) :: t
         double precision, dimension(n) :: y
         interface
@@ -734,5 +912,4 @@
         end do
         return
     end function
-
     end module Calc

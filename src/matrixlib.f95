@@ -6,7 +6,7 @@
         integer :: NMAX = 1000
         integer :: KMAX = 1000
         integer :: MAX_ITER = 1000
-        double precision :: TOL = 1.0D-8
+        double precision :: TOL = 1.0D-4
     contains
         subroutine ill_cond()
 !           Prompts the user with an ill-conditioning warning.

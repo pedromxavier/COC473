@@ -1,9 +1,44 @@
-module Plot
+module PlotLib
     use Util
     implicit none
     character(len=*), parameter :: DEFAULT_FNAME = 'plotfile'
     character(len=*), parameter :: PLOT_ENDL = ',\'//ENDL
+
+    logical :: g_INPLOT = .FALSE.
+    logical :: g_INMULTIPLOT = .FALSE.
+    
+    character(len=:), allocatable :: g_FNAME
+    character(len=:), allocatable :: g_OUTP_FNAME
+    character(len=:), allocatable :: g_PLOT_FNAME
+
+    integer :: g_M, g_N
+
+    type SPLOT
+        integer :: i, j
+        integer :: n = 0
+        logical :: grid = .FALSE.
+        logical :: done = .FALSE.
+        character(len=:), allocatable :: title, xlabel, ylabel
+        type(StringArray), dimension(:), allocatable :: legend, with
+    end type
+
+    type(SPLOT), dimension(:, :), allocatable :: g_SUBPLOTS
+
     contains
+
+    function REMOVE_TEMP_FILES(fname) result (cmd)
+        implicit none
+        character(len=*) :: fname
+        character(len=:), allocatable :: plt
+        character(len=:), allocatable :: dat
+        character(len=:), allocatable :: cmd
+
+        plt = 'plot/'//fname//'*.plt'
+        dat = 'plot/'//fname//'*.dat'
+
+        cmd = 'rm '//plt//' '//dat
+        return
+    end function
 
     function PLOT_FNAME(fname) result (path)
         implicit none
@@ -13,11 +48,31 @@ module Plot
         return
     end function
 
-    function DATA_FNAME(fname) result (path)
+    function DATA_FNAME(fname, i, j, n) result (path)
         implicit none
+        integer, optional, intent(in) :: i, j, n
         character(len=*) :: fname
-        character(len=:), allocatable :: path
-        path = 'plot/'//fname//'.dat'
+        character(len=:), allocatable :: path, t_i, t_j, t_n
+
+        if (.NOT. PRESENT(i)) then
+            t_i = '1'
+        else
+            t_i = STR(i)
+        end if 
+
+        if (.NOT. PRESENT(j)) then
+            t_j = '1'
+        else
+            t_j = STR(j)
+        end if
+
+        if (.NOT. PRESENT(n)) then
+            t_n = '1'
+        else
+            t_n = STR(n)
+        end if
+
+        path = 'plot/'//fname//'_'//t_i//'_'//t_j//'_'//t_n//'.dat'
         return
     end function
 
@@ -29,372 +84,244 @@ module Plot
         return
     end function
 
-    function GNU_PLOT_CMD(fname) result (path)
+    function GNU_PLOT_CMD(fname) result (cmd)
         implicit none
         character(len=*) :: fname
-        character(len=:), allocatable :: path
-        path = 'gnuplot -p '//PLOT_FNAME(fname)
+        character(len=:), allocatable :: cmd
+        cmd = 'gnuplot -p '//PLOT_FNAME(fname)
     end function
-
-!   =========================== Plot =========================
-    subroutine plot_config(fname, title, xlabel, ylabel, grid, points)
-        implicit none
-        integer :: file
-
-        logical, optional :: grid
-        logical :: t_grid
-
-        character(len=:), allocatable :: set_grid
-
-        logical, optional :: points
-        logical :: t_points
-
-        character(len=:), allocatable :: set_points
-
-        character(len=*), optional :: fname
-        character(len=:), allocatable :: t_fname
-
-        character(len=*), optional :: title
-        character(len=:), allocatable :: t_title
-
-        character(len=*), optional :: ylabel
-        character(len=:), allocatable :: t_ylabel
-
-        character(len=*), optional :: xlabel
-        character(len=:), allocatable :: t_xlabel
-
-        character(len=:), allocatable :: config
-
-        if (.NOT. PRESENT(fname)) then
-            t_fname = DEFAULT_FNAME
-        else
-            t_fname = fname
-        end if
-
-        if (.NOT. PRESENT(grid)) then
-            t_grid = .TRUE.
-        else
-            t_grid = grid
-        end if
-
-        if (.NOT. PRESENT(points)) then
-            t_points = .FALSE.
-        else
-            t_points = points
-        end if
-
-        if (.NOT. PRESENT(title)) then
-            t_title = ''
-        else
-            t_title = title
-        end if
-
-        if (.NOT. PRESENT(xlabel)) then
-            t_xlabel = 'x'
-        else
-            t_xlabel = xlabel
-        end if
-
-        if (.NOT. PRESENT(ylabel)) then
-            t_ylabel = 'y'
-        else
-            t_ylabel = ylabel
-        end if
-
-        if (t_grid) then
-            set_grid = "set grid"
-        else
-            set_grid = ""
-        end if
-
-        if (t_points) then
-            set_points = "with linespoints"
-        else
-            set_points = ""
-        end if
-
-        config = "#"//OUTP_FNAME(t_fname)//ENDL// &
-        'set size 1,1'//ENDL// &
-        'set terminal pdf'//ENDL// &
-        'set output "'//OUTP_FNAME(t_fname)//'"'//ENDL// &
-        'set title "'//t_title//'"'//ENDL// &
-        'set nokey'//ENDL// &
-        set_grid//ENDL// &
-        'set xlabel "'//t_xlabel//'"'//ENDL// &
-        'set ylabel "'//t_ylabel//'"'//ENDL// &
-        'xydata = "'//DATA_FNAME(t_fname)//'"'//ENDL// &
-        'plot xydata using 1:2 '//set_points
-
-        open (newunit=file, action='write', file=PLOT_FNAME(t_fname), status='replace')
-            write(file, *) config
-        close(file)
-    end subroutine 
-
-    subroutine xy_plot(x, y, n, fname, title, xlabel, ylabel, grid, points)
-        implicit none
-        integer :: file, i
-        integer, intent(in) :: n
-        double precision, dimension(n), intent(in) :: x, y
+    
+    subroutine subplot_config(i, j, title, xlabel, ylabel, legend, with, grid)
+        integer, intent(in) :: i, j
+        integer :: k, n
 
         logical, optional :: grid
-        logical :: t_grid
 
-        logical, optional :: points
-        logical :: t_points
+        character(len=*), optional :: title, ylabel, xlabel
 
-        character(len=*), optional :: title
-        character(len=:), allocatable :: t_title
+        type(StringArray), dimension(:), optional :: legend, with
 
-        character(len=*), optional :: ylabel
-        character(len=:), allocatable :: t_ylabel
+        type(SPLOT) :: subplot_ij
+        
+        subplot_ij = g_SUBPLOTS(i, j)
 
-        character(len=*), optional :: xlabel
-        character(len=:), allocatable :: t_xlabel
-
-        character(len=*), optional :: fname
-        character(len=:), allocatable :: t_fname
-
-        if (.NOT. PRESENT(fname)) then
-            t_fname = DEFAULT_FNAME
-        else
-            t_fname = fname
+        if (subplot_ij%done) then
+            call error("Duplicate configuration of subplot ("//STR(i)//", "//STR(j)//")")
+            stop "ERROR"
         end if
 
-        if (.NOT. PRESENT(grid)) then
-            t_grid = .TRUE.
-        else
-            t_grid = grid
-        end if
+        n = subplot_ij%n
 
-        if (.NOT. PRESENT(points)) then
-            t_points = .FALSE.
-        else
-            t_points = points
-        end if
-
-        if (.NOT. PRESENT(title)) then
-            t_title = ''
-        else
-            t_title = title
-        end if
-
-        if (.NOT. PRESENT(xlabel)) then
-            t_xlabel = 'x'
-        else
-            t_xlabel = xlabel
-        end if
-
-        if (.NOT. PRESENT(ylabel)) then
-            t_ylabel = 'y'
-        else
-            t_ylabel = ylabel
-        end if
-
-!       ===================== Write to data file ========================
-        open (newunit=file, action='write', file=DATA_FNAME(t_fname), status='replace')
-        do i=1,n
-            write(file, *) x(i), y(i)
-        end do
-        close(file)
-!       =================================================================
-        call plot_config(fname=t_fname, title=t_title, xlabel=t_xlabel, ylabel=t_ylabel, grid=t_grid)
-        call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(t_fname))
-    end subroutine
-
-!   ======================= MultiPlot ===================================
-    subroutine multiplot_config(m, fname, title, xlabel, ylabel, legend, grid, with)
-        implicit none
-        integer :: file, i, m
-
-        logical, optional :: grid
-        logical :: t_grid
-
-        character(len=:), allocatable :: set_grid
-
-        character(len=*), optional :: with
-        character(len=:), allocatable :: t_with
-
-        character(len=*), optional :: fname
-        character(len=:), allocatable :: t_fname
-
-        character(len=*), optional :: title
-        character(len=:), allocatable :: t_title
-
-        character(len=*), optional :: ylabel
-        character(len=:), allocatable :: t_ylabel
-
-        character(len=*), optional :: xlabel
-        character(len=:), allocatable :: t_xlabel
-
-        character(len=:), allocatable :: config
-
-        type(StringArray), dimension(:), optional :: legend
-        type(StringArray), dimension(m) :: t_legend
+        allocate(subplot_ij%legend(n))
 
         if (.NOT. PRESENT(legend)) then
-            do i=1,m
-                t_legend(i)%str = STR(i)
+            do k=1,n
+                subplot_ij%legend(k)%str = 't '//quote(STR(i))
             end do
         else
-            t_legend(:) = legend(:)
-        end if
-
-        if (.NOT. PRESENT(fname)) then
-            t_fname = DEFAULT_FNAME
-        else
-            t_fname = fname
-        end if
-
-        if (.NOT. PRESENT(grid)) then
-            t_grid = .TRUE.
-        else
-            t_grid = grid
+            do k=1,n
+                subplot_ij%legend(k)%str = 't '//quote(legend(i)%str)
+            end do
         end if
 
         if (.NOT. PRESENT(with)) then
-            t_with = ""
+            do k=1,n
+                subplot_ij%with(k)%str = 'w lines'
+            end do
         else
-            t_with = "with "//with
+            do k=1,n
+                subplot_ij%with(k)%str = 'w '//with(k)%str
+            end do
+        end if
+
+        if (.NOT. PRESENT(grid)) then
+            subplot_ij%grid = .TRUE.
+        else
+            subplot_ij%grid = grid
         end if
 
         if (.NOT. PRESENT(title)) then
-            t_title = ''
+            subplot_ij%title = ''
         else
-            t_title = title
+            subplot_ij%title = title
         end if
 
         if (.NOT. PRESENT(xlabel)) then
-            t_xlabel = 'x'
+            subplot_ij%xlabel = 'x'
         else
-            t_xlabel = xlabel
+            subplot_ij%xlabel = xlabel
         end if
 
         if (.NOT. PRESENT(ylabel)) then
-            t_ylabel = 'y'
+            subplot_ij%ylabel = 'y'
         else
-            t_ylabel = ylabel
+            subplot_ij%ylabel = ylabel
         end if
 
-        if (t_grid) then
-            set_grid = "set grid"
+        subplot_ij%done = .TRUE.
+
+    end subroutine
+
+    subroutine subplot(i, j, x, y, n)
+        integer :: file, k
+        integer, intent(in) :: i, j, n
+        double precision, dimension(n), intent(in) :: x
+        double precision, dimension(n), intent(in) :: y
+
+        character(len=:), allocatable :: s_data_fname
+
+        type(SPLOT) :: subplot_ij
+        
+        subplot_ij = g_SUBPLOTS(i, j)
+
+        if (subplot_ij%done) then
+            call error("Plot over finished subplot ("//STR(i)//", "//STR(j)//")")
+            stop "ERROR"
         else
-            set_grid = ""
+            subplot_ij%n = subplot_ij%n + 1
         end if
 
-        config = "#"//OUTP_FNAME(t_fname)//ENDL// &
-        'set size 1,1'//ENDL// &
-        'set terminal pdf'//ENDL// &
-        'set output "'//OUTP_FNAME(t_fname)//'"'//ENDL// &
-        'set title "'//t_title//'"'//ENDL// &
-        !'set nokey'//ENDL// &
-        set_grid//ENDL// &
-        'set xlabel "'//t_xlabel//'"'//ENDL// &
-        'set ylabel "'//t_ylabel//'"'//ENDL// &
-        'xydata = "'//DATA_FNAME(t_fname)//'"'//ENDL
+        s_data_fname = DATA_FNAME(g_FNAME, i, j, subplot_ij%n)
 
-!       ===============================================================================
+!       ==================== Write to Plot File ==============================================
+10      format(F16.8, ' ')
+        open(newunit=file, file=s_data_fname, status="new", position="append", action="write")
+        write(file, *)
+        do k=1, n
+            write(file, 10, advance='no') x(k)
+            write(file, *) y(k)
+        end do
+        close(file)
+!       ======================================================================================
+    end subroutine
+
+!   ======= Pipeline ============
+    subroutine begin_plot(fname)
+        integer :: file
+        character(len=*), optional :: fname; character(len=:), allocatable :: t_fname;
+
+        if (.NOT. PRESENT(fname)) then
+            t_fname = DEFAULT_FNAME
+        else
+            t_fname = fname
+        end if
+
+        g_PLOT_FNAME = g_FNAME
+        g_OUTP_FNAME = OUTP_FNAME(g_FNAME)
+
+        open(newunit=file, file=g_PLOT_FNAME, status="new", action="write")
+        write(file, *) 'set terminal pdf'
+        write(file, *) 'set output '//quote(g_OUTP_FNAME)
+        close(file)
+
+        g_INPLOT = .TRUE.
+
+    end subroutine
+
+    subroutine subplots(m, n)
+        integer, optional, intent(in) :: m, n
+        integer :: t_m, t_n
+
+        if ((.NOT. PRESENT(m)) .OR. (m <= 0)) then
+            t_m = 1
+        else
+            t_m = m
+        end if
+
+        if ((.NOT. PRESENT(n)) .OR. (n <= 0)) then
+            t_n = 1
+        else
+            t_n = n
+        end if
+
+        if (.NOT. g_INPLOT) then
+            call begin_plot()
+        end if
+
+!       ===== Allocate Variables =====
+        allocate(g_SUBPLOTS(t_m, t_n))
+        g_M = t_m
+        g_N = t_n
+        g_INMULTIPLOT = .TRUE.
+!       ==============================
+    end subroutine
+
+    subroutine render_plot()
+        integer :: file, i, j, k, m, n
+        type(SPLOT) :: subplot_ij
+
+!       === Check Plot =========
+        if (.NOT. g_INPLOT) then
+            call error("No active plot to render.")
+            stop "ERROR"
+        end if
+!       ========================
+
+        m = g_M
+        n = g_N
+
+!       ==================== Write to Plot File ==============================================      
+        open(newunit=file, file=g_PLOT_FNAME, status="old", position="append", action="write")
+        write(file, *) 'set size 1,1;'
+        write(file, *) 'set origin 0,0;'
+
+        if (g_INMULTIPLOT) then
+            write(file, *) 'set multiplot layout '//STR(m)//','//STR(n)//' rowsfirst;'        
+        end if
+
 10      format(A, ' ')
-        open (newunit=file, action='write', file=PLOT_FNAME(t_fname), status='replace')
-            write(file, *) config
-            write(file, 10, advance='no') 'plot'
-            do i=1, m
-                if (i == 1) then
-                    write(file, 10, advance='no') 'xydata u 1:2 t "'//t_legend(1)%str//'" '//t_with//PLOT_ENDL
-                else if (i == m) then
-                    write(file, *) '"" u 1:'//STR(m + 1)//' t "'//t_legend(m)%str//'" '//t_with
+!       =========== Plot data ============
+        do i= 1, m
+            do j = 1, n
+                subplot_ij = g_SUBPLOTS(i, j)
+
+                write(file, *) 'set title '//quote(subplot_ij%title)//';'
+                write(file, *) 'set xlabel '//quote(subplot_ij%xlabel)//';'
+                write(file, *) 'set ylabel '//quote(subplot_ij%ylabel)//';'
+
+                if (subplot_ij%grid) then
+                    write(file, *) 'set grid;'
                 else
-                    write(file, 10, advance='no') '"" u 1:'//STR(i + 1)//' t "'//t_legend(i)%str//'" '//t_with//PLOT_ENDL
+                    write(file, *) 'unset grid;'
+                end if
+
+                write(file, 10, advance='no') 'plot'
+
+                do k = 1, subplot_ij%n
+                    write(file, 10, advance='no') quote(DATA_FNAME(g_FNAME, i, j, k))
+                    write(file, 10, advance='no') 'u 1:2'
+                    write(file, 10, advance='no') subplot_ij%legend(k)%str
+                    write(file, 10, advance='no') subplot_ij%with(k)%str
+                end do
+
+                if (k == (subplot_ij%n)) then
+                    write(file, *) ';'
+                else
+                    write(file, *) ',\'
                 end if
             end do
-        close(file)
-    end subroutine 
-
-    subroutine xy_multiplot(x, y, n, m, fname, title, xlabel, ylabel, grid, with, legend)
-        implicit none
-        integer :: file, i, j, m
-        integer, intent(in) :: n
-        double precision, dimension(n), intent(in) :: x
-        double precision, dimension(n, m), intent(in) :: y
-
-        logical, optional :: grid
-        logical :: t_grid
-
-        character(len=*), optional :: with
-        character(len=:), allocatable :: t_with
-
-        character(len=*), optional :: title
-        character(len=:), allocatable :: t_title
-
-        character(len=*), optional :: ylabel
-        character(len=:), allocatable :: t_ylabel
-
-        character(len=*), optional :: xlabel
-        character(len=:), allocatable :: t_xlabel
-
-        character(len=*), optional :: fname
-        character(len=:), allocatable :: t_fname
-
-        type(StringArray), dimension(:), optional :: legend
-        type(StringArray), dimension(m) :: t_legend
-
-        if (.NOT. PRESENT(legend)) then
-            do i=1,m
-                t_legend(i)%str = STR(i)
-            end do
-        else
-            t_legend(:) = legend(:)
-        end if
-
-        if (.NOT. PRESENT(fname)) then
-            t_fname = DEFAULT_FNAME
-        else
-            t_fname = fname
-        end if
-
-        if (.NOT. PRESENT(grid)) then
-            t_grid = .TRUE.
-        else
-            t_grid = grid
-        end if
-
-        if (.NOT. PRESENT(with)) then
-            t_with = "lines"
-        else
-            t_with = with
-        end if
-
-        if (.NOT. PRESENT(title)) then
-            t_title = ''
-        else
-            t_title = title
-        end if
-
-        if (.NOT. PRESENT(xlabel)) then
-            t_xlabel = 'x'
-        else
-            t_xlabel = xlabel
-        end if
-
-        if (.NOT. PRESENT(ylabel)) then
-            t_ylabel = 'y'
-        else
-            t_ylabel = ylabel
-        end if
-
-!       ===================== Write to data file ========================
-10      format(F24.12, ' ')
-        open (newunit=file, action='write', file=DATA_FNAME(t_fname), status='replace')
-        do i=1,n
-            write(file, 10, advance='no') x(i)
-            do j=1,m
-                write(file, 10, advance='no') y(i, j)
-            end do
-            write(file, *) ''
         end do
+!       ===================================
+
+!       == Finish Multiplot ===        
+        if (g_INMULTIPLOT) then
+            write(file, *) 'unset multiplot'
+            g_INMULTIPLOT = .FALSE.
+        end if
+!       =======================        
         close(file)
-!       =================================================================
-        call multiplot_config(m, fname=t_fname, title=t_title, xlabel=t_xlabel, ylabel=t_ylabel, grid=t_grid, with=t_with, &
-        legend=t_legend)
-        call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(t_fname))
+!       ======================================================================================
+
+!       ===== Call GNUPLOT and remove temporary files =======
+!        call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(g_PLOT_FNAME))
+
+!        call EXECUTE_COMMAND_LINE(REMOVE_TEMP_FILES(g_FNAME))
+!       =====================================================
+
+!       ========= Free Variables ======================
+        deallocate(g_FNAME, g_OUTP_FNAME, g_PLOT_FNAME)
+        deallocate(g_SUBPLOTS)
+        g_INPLOT = .FALSE.
+!       ===============================================
     end subroutine
-end module Plot
+end module PlotLib

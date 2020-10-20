@@ -123,6 +123,12 @@ program main5
     call info(":: Quadratura de Gauss-Legendre ::")
     s = num_int(f7a, a, b, n, kind="gauss-legendre")
     call show("∫f(ω) dω", s)
+    call info(":: Método de Romberg ::")
+    s = num_int(f7a, a, b, n, kind="romberg")
+    call show("∫f(ω) dω", s)
+    call info(":: Gauss Adaptativo ::")
+    s = adapt_int(f7a, a, b, n, acc=1.0D-6, kind="gauss-legendre")
+    call show("∫f(ω) dω", s)
 
     call info("m2) "//ENDL//TAB//F7b_NAME)
     call info(":: Integração Polinomial ::")
@@ -130,6 +136,12 @@ program main5
     call show("∫f(ω) dω", s)
     call info(":: Quadratura de Gauss-Legendre ::")
     s = num_int(f7b, a, b, n, kind="gauss-legendre")
+    call show("∫f(ω) dω", s)
+    call info(":: Método de Romberg ::")
+    s = num_int(f7b, a, b, n, kind="romberg")
+    call show("∫f(ω) dω", s)
+    call info(":: Gauss Adaptativo ::")
+    s = adapt_int(f7b, a, b, n, acc=1.0D-6, kind="gauss-legendre")
     call show("∫f(ω) dω", s)
     goto 301
 
@@ -143,6 +155,12 @@ program main5
     call info(":: Quadratura de Gauss-Legendre ::")
     s = num_int(f8a, a, b, n, kind="gauss-legendre")
     call show("∫f(ω) dω", s)
+    call info(":: Método de Romberg ::")
+    s = num_int(f8a, a, b, n, kind="romberg")
+    call show("∫f(ω) dω", s)
+    call info(":: Gauss Adaptativo ::")
+    s = adapt_int(f8a, a, b, n, acc=1.0D-6, kind="gauss-legendre")
+    call show("∫f(ω) dω", s)
 
     call info("m2) "//ENDL//TAB//F8b_NAME)
     call info(":: Integração Polinomial ::")
@@ -150,6 +168,12 @@ program main5
     call show("∫f(ω) dω", s)
     call info(":: Quadratura de Gauss-Legendre ::")
     s = num_int(f8b, a, b, n, kind="gauss-legendre")
+    call show("∫f(ω) dω", s)
+    call info(":: Método de Romberg ::")
+    s = num_int(f8b, a, b, n, kind="romberg")
+    call show("∫f(ω) dω", s)
+    call info(":: Gauss Adaptativo ::")
+    s = adapt_int(f8b, a, b, n, acc=1.0D-6, kind="gauss-legendre")
     call show("∫f(ω) dω", s)
     goto 401
 

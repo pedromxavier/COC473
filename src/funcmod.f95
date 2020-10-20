@@ -485,7 +485,6 @@
     function Sn1(w) result (z)
         implicit none
         double precision :: w, z
-
         z = 2.0D0
         return
     end function
@@ -493,8 +492,7 @@
     function Sn2(w) result (z)
         implicit none
         double precision :: w, z
-
-        z = (4 * (PI ** 3) * (Hs ** 2)) * DEXP(- (16.0D0 * (PI ** 3)) / ((w ** 4) * (Tz ** 4))) / (w ** 5) * (Tz ** 4)
+        z = (4 * (Hs**2) * (PI**3)) / ( DEXP( (16 * (PI**3))/((Tz*w)**4) ) * (Tz**4) * (w**5) )
         return
     end function
 
@@ -528,14 +526,14 @@
     function f8a(w) result (z)
         implicit none
         double precision :: w, z
-        z = Ss(w, Sn1)
+        z = Ss(w, Sn2)
         return
     end function
 
     function f8b(w) result (z)
         implicit none
         double precision :: w, z
-        z = (w ** 2) * Ss(w, Sn1)
+        z = (w ** 2) * Ss(w, Sn2)
         return
     end function
 

@@ -15,6 +15,41 @@
             character (:), allocatable :: str
         end type StringArray
     contains
+
+        function quote(s, q) result (r)
+            character(len=*), intent(in) :: s
+            character(len=*), optional, intent(in) :: q
+            character(len=:), allocatable :: t_q
+            character(len=:), allocatable :: r
+
+            if (.NOT. PRESENT(q)) then
+                t_q = '"'
+            else
+                t_q = q
+            end if
+
+            r = t_q//s//t_q
+        end function
+
+        function DLOG2(x) result (y)
+            implicit none
+            double precision, intent(in) :: x
+            double precision :: y
+
+            y = DLOG(x) / DLOG(2.0D0)
+            return
+        end function
+
+        function ILOG2(n) result (k)
+            integer, intent(in) :: n
+            integer :: k
+            double precision :: x
+            x = n
+            x = DLOG2(x)
+            k = x
+            return
+        end function
+
 !       ==== Random seed Initialization ====
         subroutine init_random_seed()
             integer :: i, n, clock
