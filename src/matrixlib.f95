@@ -236,7 +236,7 @@
             A(j, :) = temp(:)
         end subroutine
 
-        function outer_product(x, y, n) result(A)
+        function outer_product(x, y, n) result (A)
             implicit none
             integer :: n
             double precision, dimension(n), intent(in) :: x, y

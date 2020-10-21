@@ -8,7 +8,9 @@ program main4
     integer :: argc
 
 !   character(len=32) :: 
-    integer :: i = 0, j = 0
+    integer :: i = 0, j = 0, k
+
+    logical :: ok
 
 !   R -> R
     double precision :: x, y, a, b, x0
@@ -77,22 +79,30 @@ program main4
     
     call info(": Método de Newton (Zero de função) :")
 !   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x0 = DRAND(0.0D0, b)
 !   == Algorithm run ======
-    x = newton(f1, df1, x0)
-    y = f1(x)
-!   == Results ============    
+        x = newton(f1, df1, x0, ok)
+        y = f1(x)
+    end do
+!   == Results ============
+    call show('x0', x0)    
     call show('x', x)
     call show('y', y)
 !   =======================
 
     call info(": Método da Secante :")
 !   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x0 = DRAND(0.0D0, b)
 !   == Algorithm run ======
-    x = secant(f1, x0)
-    y = f1(x)
-!   == Results ============    
+        x = secant(f1, x0, ok)
+        y = f1(x)
+    end do
+!   == Results ============
+    call show('x0', x0)    
     call show('x', x)
     call show('y', y)
 !   =======================
@@ -100,11 +110,17 @@ program main4
     call info("Interpolação Inversa:")
 !   == Bounds definition ==
     allocate(x123(3))
-    x123 = (/-200.0D0, -100.0D0, 50.0D0/)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x123 = (/ (DRAND(0.0D0, b), k=1,3)/)
 !   == Algorithm run ======
-    x = inv_interp(f1, x123)
-    y = f1(x)
-!   == Results ============    
+        x = inv_interp(f1, x123, ok)
+        y = f1(x)
+    end do
+!   == Results ============
+    call show('x1', x123(1))
+    call show('x2', x123(2))
+    call show('x3', x123(3))
     call show('x', x)
     call show('y', y)
 !   =======================
@@ -126,22 +142,30 @@ program main4
     
     call info(": Método de Newton (Zero de função) :")
 !   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x0 = DRAND(0.0D0, b)
 !   == Algorithm run ======
-    x = newton(f2, df2, x0)
-    y = f2(x)
-!   == Results ============    
+        x = newton(f2, df2, x0, ok)
+        y = f2(x)
+    end do
+!   == Results ============
+    call show('x0', x0)
     call show('x', x)
     call show('y', y)
 !   =======================
 
     call info(": Método da Secante :")
 !   == Bounds definition ==
-    x0 = DRAND(0.0D0, b)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x0 = DRAND(0.0D0, b)
 !   == Algorithm run ======
-    x = secant(f2, x0)
-    y = f2(x)
-!   == Results ============    
+        x = secant(f2, x0, ok)
+        y = f2(x)
+    end do
+!   == Results ============
+    call show('x0', x0)
     call show('x', x)
     call show('y', y)
 !   =======================
@@ -149,11 +173,17 @@ program main4
     call info("Interpolação Inversa:")
 !   == Bounds definition ==
 !   allocate(x123(3))
-    x123 = (/2.0D0, 5.0D0, 15.0D0/)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        x123 = (/ (DRAND(0.0D0, b), k=1,3)/)
 !   == Algorithm run ======
-    x = inv_interp(f2, x123)
-    y = f2(x)
-!   == Results ============    
+        x = inv_interp(f2, x123, ok)
+        y = f2(x)
+    end do
+!   == Results ============
+    call show('x1', x123(1))
+    call show('x2', x123(2))
+    call show('x3', x123(3))   
     call show('x', x)
     call show('y', y)
 !   =======================
@@ -166,14 +196,13 @@ program main4
     allocate(xx0(3))
     allocate(xx(3))
     allocate(yy(3))
-    xx0 = (/ &
-        -0.8315537061190D0, &
-        -0.0852250901010D0, &
-         0.3631122375950D0 &
-    /)
+    ok = .FALSE.
+    do while (.NOT. ok)
+        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_newton(ff1, dff1, xx0, 3)
-    yy = ff1(xx, 3)
+        xx = sys_newton(ff1, dff1, xx0, 3, ok)
+        yy = ff1(xx, 3)
+    end do
 !   == Results ============
     call show_vector('x0', xx0, 3)
     call show_vector('x', xx, 3)
@@ -189,10 +218,13 @@ program main4
 !   allocate(xx0(3))
 !   allocate(xx(3))
 !   allocate(yy(3))
-!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    ok = .FALSE.
+    do while (.NOT. ok)
+        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_newton_num(ff1, xx0, 3)
-    yy = ff1(xx, 3)
+        xx = sys_newton_num(ff2, xx0, 3, ok)
+    end do
+    yy = ff2(xx, 3)
 !   == Results ============    
     call show_vector('x0', xx0, 3)
     call show_vector('x', xx, 3)
@@ -210,10 +242,13 @@ program main4
 !   allocate(xx(3))
 !   allocate(yy(3))
     J0 = id_matrix(3)
-!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    ok = .FALSE.
+    do while (.NOT. ok)
+        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_broyden(ff1, xx0, J0, 3)
-    yy = ff1(xx, 3)
+        xx = sys_broyden(ff2, xx0, J0, 3, ok)
+    end do
+    yy = ff2(xx, 3)
 !   == Results ============    
     call show_vector('x0', xx0, 3)
     call show_vector('x', xx, 3)
@@ -256,10 +291,13 @@ program main4
 !   allocate(xx0(3))
 !   allocate(xx(3))
 !   allocate(yy(3))
-    xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    ok = .FALSE.
+    do while(.NOT. ok)
+        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_newton(ff2, dff2, xx0, 3)
-    yy = ff2(xx, 3)
+        xx = sys_newton(ff2, dff2, xx0, 3, ok)
+        yy = ff2(xx, 3)
+    end do
 !   == Results ============    
     call show_vector('x0', xx0, 3)
     call show_vector('x', xx, 3)
@@ -275,9 +313,12 @@ program main4
 !   allocate(xx0(3))
 !   allocate(xx(3))
 !   allocate(yy(3))
-!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    ok = .FALSE.
+    do while (.NOT. ok)
+        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_newton_num(ff2, xx0, 3)
+        xx = sys_newton_num(ff2, xx0, 3, ok)
+    end do
     yy = ff2(xx, 3)
 !   == Results ============    
     call show_vector('x0', xx0, 3)
@@ -296,9 +337,12 @@ program main4
 !   allocate(xx(3))
 !   allocate(yy(3))
     J0 = id_matrix(3)
-!   xx0 = (/DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0), DRAND(-1.0D0, 1.0D0)/)
+    ok = .FALSE.
+    do while (.NOT. ok)
+        xx0 =  (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
 !   == Algorithm run ======
-    xx = sys_broyden(ff2, xx0, J0, 3)
+        xx = sys_broyden(ff2, xx0, J0, 3, ok)
+    end do
     yy = ff2(xx, 3)
 !   == Results ============    
     call show_vector('x0', xx0, 3)
@@ -321,28 +365,30 @@ program main4
 !   ===============================
     xx(:) = (/1.0D0, 2.0D0, 3.0D0/)
     yy(:) = (/1.0D0, 2.0D0, 9.0D0/)
-
-    ! bb0(:) = (/ &
-    !     DRAND(-1.0D0, 1.0D0), &
-    !     DRAND(-1.0D0, 1.0D0), &
-    !     DRAND(-1.0D0, 1.0D0) &
-    ! /)
-
-    bb0 = (/ &
-         0.006786379718D0, &
-        -0.906357904393D0, &
-        -0.466847776037D0 &
-    /)
-
+ 
     call info(": Método não-linear de Mínimos Quadrados :")
-    bb(:) = sys_least_squares(ff5, dff5, xx, yy, bb0, 3, 3)
+
+    ok = .FALSE.
+
+    bb0(:) = (/ 0.293477D0, &
+                0.978723D0, &
+                0.842565D0 /)
+    bb(:) = sys_least_squares(ff5, dff5, xx, yy, bb0, 3, 3, ok)
+    
     call show_vector('x', xx, 3)
     call show_vector('y', yy, 3)
     call show_vector('b0', bb0, 3)
     call show_vector('b', bb, 3)
 
     call info(": Método não-linear de Mínimos Quadrados [Derivadas Numéricas]:")
-    bb(:) = sys_least_squares_num(ff5, xx, yy, bb0, 3, 3)
+
+    ok = .FALSE.
+
+    bb0(:) = (/ 0.293477D0, &
+                0.978723D0, &
+                0.842565D0 /)
+    bb(:) = sys_least_squares_num(ff5, xx, yy, bb0, 3, 3, ok)
+
     call show_vector('x', xx, 3)
     call show_vector('y', yy, 3)
     call show_vector('b0', bb0, 3)
@@ -353,5 +399,6 @@ program main4
     deallocate(bb)
     deallocate(bb0)
 !   =========================
+
     goto 301
 end program main4

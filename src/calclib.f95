@@ -142,16 +142,18 @@
             double precision :: f, df
             double precision, intent(in) :: x0
             double precision :: x, xk
-            logical :: ok
+            logical, intent(out) :: ok
 
             ok = .TRUE.
             xk = x0
-
             do i = 1, MAX_ITER
                 x = xk - f(xk) / df(xk)
                 if (DABS(x - xk) > TOL) then
                     xk = x
                 else
+                    if (ISNAN(x) .OR. x == DINF .OR. x == DNINF) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if 
             end do
@@ -165,7 +167,7 @@
             double precision :: xk(3), yk(2)
             double precision, intent(in) :: x0
             double precision :: x
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function f(x) result (y)
                     implicit none
@@ -186,6 +188,9 @@
                     yk(1) = yk(2)
                 else
                     x = xk(3)
+                    if (ISNAN(x) .OR. x == DINF .OR. x == DNINF) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if 
             end do
@@ -201,10 +206,10 @@
             double precision :: x0(3), y0(3)
             integer :: i, k
             integer :: j(1)
-            logical :: ok
+            logical, intent(out) :: ok
 
             x0(:) = x00(:)
-            xk = 1.0D+32
+            xk = 1.0D+308
 
             ok = .TRUE.
 
@@ -225,6 +230,9 @@
                     y0(i) = f(x)
                     xk = x
                 else
+                    if (ISNAN(x) .OR. x == DINF .OR. x == DNINF) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
@@ -236,10 +244,10 @@
             implicit none
             integer :: n
             double precision, dimension(n), intent(in) :: xx0
-            double precision, dimension(n) :: x, xk, dx
+            double precision, dimension(n) :: x, xdx, dx
             double precision :: J(n, n) 
             integer :: k
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -258,23 +266,25 @@
 
             ok = .TRUE.
 
-            xk(:) = xx0(:)
+            x = xx0
 
             do k=1, MAX_ITER
-                J(:, :) = dff(xk, n)
-                dx(:) = -MATMUL(inv(J, n, ok), ff(xk, n))
-                x(:) = xk(:) + dx(:)
+                J = dff(x, n)
+                dx = -MATMUL(inv(J, n, ok), ff(x, n))
+                xdx = x + dx
                 
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular.")
                     exit
-                else if ((NORM(dx, n) / NORM(x, n)) > TOL) then
-                    xk(:) = x(:)
+                else if ((NORM(dx, n) / NORM(xdx, n)) > TOL) then
+                    x = xdx
                 else
+                    if (VEDGE(x)) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
-            call error("O Método de Newton não convergiu.")
+            ok = .FALSE.
             return
         end function
 
@@ -283,10 +293,10 @@
             implicit none
             integer :: n
             double precision, dimension(n), intent(in) :: xx0
-            double precision, dimension(n):: x, xk, xh, dx, y
+            double precision, dimension(n):: x, xdx, xh, dx
             double precision, dimension(n, n) :: J
             integer :: i, k
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -297,33 +307,33 @@
 
             ok = .TRUE.
 
-            xh(:) = 0.0D0
-            xk(:) = xx0(:)
+            x = xx0
+            xh = 0.0D0
 
             do k=1, MAX_ITER
 !               Compute Jacobian Matrix
-                J(:, :) = 0.0D0
                 do i=1, n
 !                   Partial derivative with respect do the i-th coordinates                    
                     xh(i) = h
-                    J(:, i) = (ff(x(:) + xh(:), n) - ff(x(:) - xh(:), n)) / (2 * h)
+                    J(:, i) = (ff(x + xh, n) - ff(x - xh, n)) / (2 * h)
                     xh(i) = 0.0D0
                 end do
 
-                y(:) = ff(xk, n)
-                dx(:) = -matmul(inv(J, n, ok), y)
-                x(:) = xk(:) + dx(:)
+                dx = -MATMUL(inv(J, n, ok), ff(x, n))
+                xdx = x + dx
 
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular.")
                     exit
-                else if ((NORM(dx, n) / NORM(x, n)) > TOL) then
-                    xk(:) = x(:)
+                else if ((NORM(dx, n) / NORM(xdx, n)) > TOL) then
+                    x = xdx
                 else
+                    if (VEDGE(x)) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
-            call error("O Método de Newton não convergiu. (Derivada Numérica)")
+            ok = .FALSE.
             return
         end function
 
@@ -332,10 +342,10 @@
             integer :: n
             double precision, dimension(n), intent(in) :: xx0
             double precision, dimension(n, n), intent(in) :: B0
-            double precision, dimension(n) :: x, xk, yk, dx
-            double precision, dimension(n, n) :: J, Bk
+            double precision, dimension(n) :: x, xdx, dx, dff
+            double precision, dimension(n, n) :: J
             integer :: k
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -346,25 +356,27 @@
 
             ok = .TRUE.
 
-            xk(:) = xx0(:)
-            Bk(:, :) = B0(:, :)
+            x = xx0
+            J = B0
 
             do k=1, MAX_ITER
-                J(:, :) = Bk(:, :)
-                dx(:) = -MATMUL(inv(J, n, ok), ff(xk, n))
-                x(:) = xk(:) + dx(:)
-                yk(:) = ff(x, n) - ff(xk, n)
+                dx = -MATMUL(inv(J, n, ok), ff(x, n))
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular.")
                     exit
-                else if ((norm(dx, n) / norm(x, n)) > TOL) then
-                    Bk(:, :) = Bk(:, :) + (outer_product(yk(:) - MATMUL(Bk, dx), dx, n)  /  DOT_PRODUCT(dx, dx))
-                    xk(:) = x(:)
+                end if
+                xdx = x + dx
+                dff = ff(xdx, n) - ff(x, n)
+                if ((norm(dx, n) / norm(xdx, n)) > TOL) then
+                    J = J + OUTER_PRODUCT((dff - MATMUL(J, dx)) / DOT_PRODUCT(dx, dx), dx, n)
+                    x = xdx
                 else
+                    if (VEDGE(x)) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
-            call error("O Método de Broyden não convergiu")
+            ok = .FALSE.
             return
         end function
 
@@ -372,10 +384,10 @@
             implicit none
             integer :: m, n
             double precision, dimension(n), intent(in) :: x, y, b0
-            double precision, dimension(n) :: b, bk, db
+            double precision, dimension(n) :: b, bdb, db
             double precision :: J(n, n) 
             integer :: k
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function ff(x, b, m, n) result (z)
                     implicit none
@@ -396,25 +408,27 @@
                 end function
             end interface
 
-            bk(:) = b0(:)
+            b = b0
 
             ok = .TRUE.
 
             do k=1, MAX_ITER
-                J(:, :) = dff(x, b, m, n)
-                db(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, bk, m, n) - y))
-                b(:) = bk(:) + db(:)
+                J = dff(x, b, m, n)
+                db = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, b, m, n) - y))
+                bdb = b + db
 
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular. k="//STR(k))
                     exit
-                else if ((NORM(db, m) / NORM(b, m)) > TOL) then
-                    bk(:) = b(:)
+                else if ((NORM(db, m) / NORM(bdb, m)) > TOL) then
+                    b = bdb
                 else
+                    if (VEDGE(b)) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
-            call error("O Método (Não-linear) de Mínimos Quadrados não convergiu.")
+            ok = .FALSE.
             return
         end function
 
@@ -423,10 +437,10 @@
             implicit none
             integer :: m, n
             double precision, dimension(n), intent(in) :: x, y, b0
-            double precision, dimension(n) :: b, bk, db, bh
+            double precision, dimension(n) :: b, bdb, db, bh
             double precision :: J(n, n) 
             integer :: i, k
-            logical :: ok
+            logical, intent(out) :: ok
             interface
                 function ff(x, b, m, n) result (z)
                     implicit none
@@ -439,31 +453,32 @@
 
             ok = .TRUE.
 
-            bh(:) = 0.0D0
-            bk(:) = b0(:)
+            bh = 0.0D0
+            b = b0
 
             do k=1, MAX_ITER
 !               Compute Jacobian Matrix
                 do i=1, m
 !                   Partial derivative with respect do the i-th coordinates                    
                     bh(i) = h
-                    J(:, i) = (ff(x, b(:) + bh(:), m, n) - ff(x, b(:) - bh(:), m, n)) / (2 * h)
+                    J(:, i) = (ff(x, b + bh, m, n) - ff(x, b - bh, m, n)) / (2 * h)
                     bh(i) = 0.0D0
                 end do
-                db(:) = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, bk, m, n) - y))
-                b(:) = bk(:) + db(:)
+                db = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, b, m, n) - y))
+                bdb = b + db
 
                 if (.NOT. ok) then
-                    call error("Tentativa de inversão de matriz singular.")
                     exit
-                else if ((NORM(db, m) / NORM(b, m)) > TOL) then
-                    bk(:) = b(:)
+                else if ((NORM(db, m) / NORM(bdb, m)) > TOL) then
+                    b = bdb
                 else
+                    if (VEDGE(b)) then
+                        ok = .FALSE.
+                    end if
                     return
                 end if
             end do
-
-            call error("O Método (Não-Linear) de Mínimos Quadrados não convergiu. (Derivada Numérica)")
+            ok = .FALSE.
             return
         end function
 

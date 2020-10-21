@@ -25,6 +25,9 @@ calc2: utillib.o matrixlib.o calclib.o funcmod.o main5.o
 calc3: utillib.o matrixlib.o calclib.o plotlib.o funcmod.o main6.o
 	$(f95c) -o calc3 $(args) utillib.o matrixlib.o calclib.o plotlib.o funcmod.o main6.o
 
+plottest: utillib.o plotlib.o plottest.o
+	$(f95c) -o plottest $(args) utillib.o plotlib.o plottest.o
+
 %.mod: %.o %.f95
 	$(f95c) -c $(args) $<
 
@@ -32,5 +35,5 @@ calc3: utillib.o matrixlib.o calclib.o plotlib.o funcmod.o main6.o
 	$(f95c) -c $(args) $<
 
 clean:
-	rm -f *.o *.mod matrix[1-9] calc[1-9]
+	rm -f *.o *.mod plottest matrix[1-9] calc[1-9] plot/*.dat plot/*.plt
 # End Makefile

@@ -5,16 +5,40 @@
         character, parameter :: TAB = ACHAR(9)
 
         double precision :: DINF, DNINF, DNAN
-        !DATA DINF/x'7ff0000000000000'/, DNINF/x'fff0000000000000'/, DNAN/x'7ff8000000000000'/
+        DATA DINF/x'7ff0000000000000'/, DNINF/x'fff0000000000000'/, DNAN/x'7ff8000000000000'/
 
         double precision :: PI = 4.0D0 * DATAN(1.0D0)
 
-        logical :: ENABLE_DEBUG = .FALSE.
+        logical :: DEBUG_MODE = .FALSE.
 
         type StringArray
             character (:), allocatable :: str
         end type StringArray
     contains
+
+    function EDGE(x) result (y)
+        double precision, intent(in) :: x
+        logical :: y
+
+        y = ISNAN(x) .OR. (x == DINF) .OR. (x == DNINF)
+        return
+    end function
+
+    function VEDGE(x) result (y)
+        double precision, dimension(:), intent(in) :: x
+        logical :: y
+
+        y = ANY(ISNAN(x)) .OR. ANY(x == DINF) .OR. ANY(x == DNINF)
+        return
+    end function
+
+    function MEDGE(x) result (y)
+        double precision, dimension(:, :), intent(in) :: x
+        logical :: y
+
+        y = ANY(ISNAN(x)) .OR. ANY(x == DINF) .OR. ANY(x == DNINF)
+        return
+    end function
 
         function quote(s, q) result (r)
             character(len=*), intent(in) :: s
@@ -111,7 +135,7 @@
 !           Yellow Text
             implicit none
             character(len=*) :: text
-            if (ENABLE_DEBUG) then
+            if (DEBUG_MODE) then
                 write (*, *) 'DEBUG: '//achar(27)//'[93m'//text//''//achar(27)//'[0m'
             end if
         end subroutine

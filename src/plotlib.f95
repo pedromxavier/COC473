@@ -2,14 +2,14 @@ module PlotLib
     use Util
     implicit none
     character(len=*), parameter :: DEFAULT_FNAME = 'plotfile'
+    character(len=*), parameter :: DEFAULT_SIZE_W = '8in'
+    character(len=*), parameter :: DEFAULT_SIZE_H = '6in'
     character(len=*), parameter :: PLOT_ENDL = ',\'//ENDL
 
     logical :: g_INPLOT = .FALSE.
     logical :: g_INMULTIPLOT = .FALSE.
     
-    character(len=:), allocatable :: g_FNAME
-    character(len=:), allocatable :: g_OUTP_FNAME
-    character(len=:), allocatable :: g_PLOT_FNAME
+    character(len=:), allocatable :: g_FNAME, g_OUTP_FNAME, g_PLOT_FNAME, g_SIZE_W, g_SIZE_H
 
     integer :: g_M, g_N
 
@@ -101,64 +101,61 @@ module PlotLib
 
         type(StringArray), dimension(:), optional :: legend, with
 
-        type(SPLOT) :: subplot_ij
-        
-        subplot_ij = g_SUBPLOTS(i, j)
-
-        if (subplot_ij%done) then
+        if (g_SUBPLOTS(i, j)%done) then
             call error("Duplicate configuration of subplot ("//STR(i)//", "//STR(j)//")")
             stop "ERROR"
         end if
 
-        n = subplot_ij%n
+        n = g_SUBPLOTS(i, j)%n
 
-        allocate(subplot_ij%legend(n))
+        allocate(g_SUBPLOTS(i, j)%legend(n))
+        allocate(g_SUBPLOTS(i, j)%with(n))
 
         if (.NOT. PRESENT(legend)) then
             do k=1,n
-                subplot_ij%legend(k)%str = 't '//quote(STR(i))
+                g_SUBPLOTS(i, j)%legend(k)%str = 't '//quote(STR(i))
             end do
         else
             do k=1,n
-                subplot_ij%legend(k)%str = 't '//quote(legend(i)%str)
+                g_SUBPLOTS(i, j)%legend(k)%str = 't '//quote(legend(i)%str)
             end do
         end if
 
         if (.NOT. PRESENT(with)) then
             do k=1,n
-                subplot_ij%with(k)%str = 'w lines'
+                g_SUBPLOTS(i, j)%with(k)%str = 'w lines'
             end do
         else
             do k=1,n
-                subplot_ij%with(k)%str = 'w '//with(k)%str
+                g_SUBPLOTS(i, j)%with(k)%str = 'w '//with(k)%str
             end do
         end if
 
         if (.NOT. PRESENT(grid)) then
-            subplot_ij%grid = .TRUE.
+            g_SUBPLOTS(i, j)%grid = .TRUE.
         else
-            subplot_ij%grid = grid
+            g_SUBPLOTS(i, j)%grid = grid
         end if
 
         if (.NOT. PRESENT(title)) then
-            subplot_ij%title = ''
+            g_SUBPLOTS(i, j)%title = ''
         else
-            subplot_ij%title = title
+            g_SUBPLOTS(i, j)%title = title
         end if
 
         if (.NOT. PRESENT(xlabel)) then
-            subplot_ij%xlabel = 'x'
+            g_SUBPLOTS(i, j)%xlabel = 'x'
         else
-            subplot_ij%xlabel = xlabel
+            g_SUBPLOTS(i, j)%xlabel = xlabel
         end if
 
         if (.NOT. PRESENT(ylabel)) then
-            subplot_ij%ylabel = 'y'
+            g_SUBPLOTS(i, j)%ylabel = 'y'
         else
-            subplot_ij%ylabel = ylabel
+            g_SUBPLOTS(i, j)%ylabel = ylabel
         end if
 
-        subplot_ij%done = .TRUE.
+        g_SUBPLOTS(i, j)%done = .TRUE.
 
     end subroutine
 
@@ -170,18 +167,14 @@ module PlotLib
 
         character(len=:), allocatable :: s_data_fname
 
-        type(SPLOT) :: subplot_ij
-        
-        subplot_ij = g_SUBPLOTS(i, j)
-
-        if (subplot_ij%done) then
+        if (g_SUBPLOTS(i, j)%done) then
             call error("Plot over finished subplot ("//STR(i)//", "//STR(j)//")")
             stop "ERROR"
         else
-            subplot_ij%n = subplot_ij%n + 1
+            g_SUBPLOTS(i, j)%n = g_SUBPLOTS(i, j)%n + 1
         end if
 
-        s_data_fname = DATA_FNAME(g_FNAME, i, j, subplot_ij%n)
+        s_data_fname = DATA_FNAME(g_FNAME, i, j, g_SUBPLOTS(i, j)%n)
 
 !       ==================== Write to Plot File ==============================================
 10      format(F16.8, ' ')
@@ -196,22 +189,34 @@ module PlotLib
     end subroutine
 
 !   ======= Pipeline ============
-    subroutine begin_plot(fname)
+    subroutine begin_plot(fname, size_w, size_h)
         integer :: file
-        character(len=*), optional :: fname; character(len=:), allocatable :: t_fname;
+        character(len=*), optional :: fname, size_w, size_h
 
-        if (.NOT. PRESENT(fname)) then
-            t_fname = DEFAULT_FNAME
+        if (.NOT. PRESENT(size_w)) then
+            g_SIZE_W = DEFAULT_SIZE_W
         else
-            t_fname = fname
+            g_SIZE_W = size_w
         end if
 
-        g_PLOT_FNAME = g_FNAME
+        if (.NOT. PRESENT(size_h)) then
+            g_SIZE_H = DEFAULT_SIZE_H
+        else
+            g_SIZE_H = size_h
+        end if
+
+        if (.NOT. PRESENT(fname)) then
+            g_FNAME = DEFAULT_FNAME
+        else
+            g_FNAME = fname
+        end if
+
+        g_PLOT_FNAME = PLOT_FNAME(g_FNAME)
         g_OUTP_FNAME = OUTP_FNAME(g_FNAME)
 
         open(newunit=file, file=g_PLOT_FNAME, status="new", action="write")
-        write(file, *) 'set terminal pdf'
-        write(file, *) 'set output '//quote(g_OUTP_FNAME)
+        write(file, *) 'set terminal pdf size '//g_SIZE_W//', '//g_SIZE_H//';'
+        write(file, *) 'set output '//quote(g_OUTP_FNAME)//';'
         close(file)
 
         g_INPLOT = .TRUE.
@@ -248,7 +253,6 @@ module PlotLib
 
     subroutine render_plot()
         integer :: file, i, j, k, m, n
-        type(SPLOT) :: subplot_ij
 
 !       === Check Plot =========
         if (.NOT. g_INPLOT) then
@@ -262,7 +266,6 @@ module PlotLib
 
 !       ==================== Write to Plot File ==============================================      
         open(newunit=file, file=g_PLOT_FNAME, status="old", position="append", action="write")
-        write(file, *) 'set size 1,1;'
         write(file, *) 'set origin 0,0;'
 
         if (g_INMULTIPLOT) then
@@ -273,13 +276,13 @@ module PlotLib
 !       =========== Plot data ============
         do i= 1, m
             do j = 1, n
-                subplot_ij = g_SUBPLOTS(i, j)
+                g_SUBPLOTS(i, j) = g_SUBPLOTS(i, j)
 
-                write(file, *) 'set title '//quote(subplot_ij%title)//';'
-                write(file, *) 'set xlabel '//quote(subplot_ij%xlabel)//';'
-                write(file, *) 'set ylabel '//quote(subplot_ij%ylabel)//';'
+                write(file, *) 'set title '//quote(g_SUBPLOTS(i, j)%title)//';'
+                write(file, *) 'set xlabel '//quote(g_SUBPLOTS(i, j)%xlabel)//';'
+                write(file, *) 'set ylabel '//quote(g_SUBPLOTS(i, j)%ylabel)//';'
 
-                if (subplot_ij%grid) then
+                if (g_SUBPLOTS(i, j)%grid) then
                     write(file, *) 'set grid;'
                 else
                     write(file, *) 'unset grid;'
@@ -287,18 +290,18 @@ module PlotLib
 
                 write(file, 10, advance='no') 'plot'
 
-                do k = 1, subplot_ij%n
+                do k = 1, g_SUBPLOTS(i, j)%n
                     write(file, 10, advance='no') quote(DATA_FNAME(g_FNAME, i, j, k))
                     write(file, 10, advance='no') 'u 1:2'
-                    write(file, 10, advance='no') subplot_ij%legend(k)%str
-                    write(file, 10, advance='no') subplot_ij%with(k)%str
-                end do
+                    write(file, 10, advance='no') g_SUBPLOTS(i, j)%legend(k)%str
+                    write(file, 10, advance='no') g_SUBPLOTS(i, j)%with(k)%str
 
-                if (k == (subplot_ij%n)) then
-                    write(file, *) ';'
-                else
-                    write(file, *) ',\'
-                end if
+                    if (k == (g_SUBPLOTS(i, j)%n)) then
+                        write(file, *) ';'
+                    else
+                        write(file, *) ',\'
+                    end if
+                end do
             end do
         end do
 !       ===================================
@@ -313,9 +316,9 @@ module PlotLib
 !       ======================================================================================
 
 !       ===== Call GNUPLOT and remove temporary files =======
-!        call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(g_PLOT_FNAME))
+        call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(g_FNAME))
 
-!        call EXECUTE_COMMAND_LINE(REMOVE_TEMP_FILES(g_FNAME))
+        call EXECUTE_COMMAND_LINE(REMOVE_TEMP_FILES(g_FNAME))
 !       =====================================================
 
 !       ========= Free Variables ======================
