@@ -4,7 +4,9 @@
         use Util
         use Matrix
         implicit none
+        integer :: INT_N = 128
         double precision :: h = 1.0D-5
+        !double precision :: D_TOL = 1.0D-5
 
         character (len=*), parameter :: GAUSS_LEGENDRE_QUAD = "quadratures/gauss-legendre/gauss-legendre"
         character (len=*), parameter :: GAUSS_HERMITE_QUAD = "quadratures/gauss-hermite/gauss-hermite"
@@ -102,11 +104,23 @@
             return
         end function
 
-        function bissection(f, aa, bb) result (x)
+        function bissection(f, aa, bb, tol) result (x)
             implicit none
-            double precision :: f
             double precision, intent(in) :: aa, bb
-            double precision :: a, b, x
+            double precision :: a, b, x, t_tol
+            double precision, optional :: tol
+
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
 
             if (bb < aa) then
                 a = bb
@@ -116,7 +130,7 @@
                 b = bb
             end if
 
-            do while (DABS(a - b) > TOL)
+            do while (DABS(a - b) > t_tol)
                 x = (a + b) / 2
                 if (f(a) > f(b)) then
                     if (f(x) > 0) then
@@ -136,19 +150,44 @@
             return
         end function
 
-        function newton(f, df, x0, ok) result (x)
+        function newton(f, df, x0, ok, tol, max_iter) result (x)
             implicit none
-            integer :: i
-            double precision :: f, df
+            integer :: k, t_max_iter
+            integer, optional :: max_iter
             double precision, intent(in) :: x0
-            double precision :: x, xk
+            double precision :: x, xk, t_tol
+            double precision, optional :: tol
             logical, intent(out) :: ok
+
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+            interface
+                function df(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
 
             ok = .TRUE.
             xk = x0
-            do i = 1, MAX_ITER
+            do k = 1, t_max_iter
                 x = xk - f(xk) / df(xk)
-                if (DABS(x - xk) > TOL) then
+                if (DABS(x - xk) > t_tol) then
                     xk = x
                 else
                     if (ISNAN(x) .OR. x == DINF .OR. x == DNINF) then
@@ -161,12 +200,14 @@
             return
         end function
 
-        function secant(f, x0, ok) result (x)
+        function secant(f, x0, ok, tol, max_iter) result (x)
             implicit none
-            integer :: i
+            integer :: k, t_max_iter
+            integer, optional :: max_iter
             double precision :: xk(3), yk(2)
             double precision, intent(in) :: x0
-            double precision :: x
+            double precision :: x, t_tol
+            double precision, optional :: tol
             logical, intent(out) :: ok
             interface
                 function f(x) result (y)
@@ -175,15 +216,27 @@
                 end function
             end interface
 
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
             ok = .TRUE.
 
             xk(1) = x0
             xk(2) = x0 + h
             yk(1) = f(xk(1))
-            do i = 1, MAX_ITER
+            do k = 1, t_max_iter
                 yk(2) = f(xk(2))
                 xk(3) = xk(2) - (yk(2) * (xk(2) - xk(1))) / (yk(2) - yk(1))             
-                if (DABS(xk(3) - xk(2)) > TOL) then
+                if (DABS(xk(3) - xk(2)) > t_tol) then
                     xk(1:2) = xk(2:3)
                     yk(1) = yk(2)
                 else
@@ -198,22 +251,40 @@
             return
         end function
 
-        function inv_interp(f, x00, ok) result (x)
+        function inv_interp(f, x00, ok, tol, max_iter) result (x)
             implicit none
-            double precision :: f
-            double precision :: x, xk
+            logical, intent(out) :: ok
+            integer :: i, j(1), k, t_max_iter
+            integer, optional :: max_iter
+            double precision :: x, xk, t_tol
+            double precision, optional :: tol
             double precision, intent(in) :: x00(3)
             double precision :: x0(3), y0(3)
-            integer :: i, k
-            integer :: j(1)
-            logical, intent(out) :: ok
+
+            interface
+                function f(x) result (y)
+                    double precision :: x, y
+                end function
+            end interface
+
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
 
             x0(:) = x00(:)
             xk = 1.0D+308
 
             ok = .TRUE.
 
-            do k = 1, MAX_ITER
+            do k = 1, t_max_iter
                 call cross_sort(x0, y0, 3)
 
 !               Cálculo de y                
@@ -223,7 +294,7 @@
 
                 x = lagrange(y0, x0, 3, 0.0D0)
 
-                if (DABS(x - xk) > TOL) then
+                if (DABS(x - xk) > t_tol) then
                     j(:) = MAXLOC(DABS(y0))
                     i = j(1)
                     x0(i) = x
@@ -240,14 +311,17 @@
             return
         end function
 
-        function sys_newton(ff, dff, xx0, n, ok) result (x)
+        function sys_newton(ff, dff, x0, n, ok, tol, max_iter) result (x)
             implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: xx0
-            double precision, dimension(n) :: x, xdx, dx
-            double precision :: J(n, n) 
-            integer :: k
             logical, intent(out) :: ok
+            integer :: n, k, t_max_iter
+            integer, optional :: max_iter
+            double precision, dimension(n), intent(in) :: x0
+            double precision, dimension(n) :: x, xdx, dx
+            double precision, dimension(n, n) :: J
+            double precision :: t_tol
+            double precision, optional :: tol
+            
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -264,18 +338,30 @@
                 end function
             end interface
 
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
             ok = .TRUE.
 
-            x = xx0
+            x = x0
 
-            do k=1, MAX_ITER
+            do k=1, t_max_iter
                 J = dff(x, n)
                 dx = -MATMUL(inv(J, n, ok), ff(x, n))
                 xdx = x + dx
                 
                 if (.NOT. ok) then
                     exit
-                else if ((NORM(dx, n) / NORM(xdx, n)) > TOL) then
+                else if ((NORM(dx, n) / NORM(xdx, n)) > t_tol) then
                     x = xdx
                 else
                     if (VEDGE(x)) then
@@ -288,15 +374,18 @@
             return
         end function
 
-        function sys_newton_num(ff, xx0, n, ok) result (x)
+        function sys_newton_num(ff, x0, n, ok, tol, max_iter) result (x)
 !           Same as previous function, with numerical partial derivatives            
             implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: xx0
+            logical, intent(out) :: ok
+            integer :: n, i, k, t_max_iter
+            integer, optional :: max_iter
+            double precision, dimension(n), intent(in) :: x0
             double precision, dimension(n):: x, xdx, xh, dx
             double precision, dimension(n, n) :: J
-            integer :: i, k
-            logical, intent(out) :: ok
+            double precision :: t_tol
+            double precision, optional :: tol
+            
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -305,12 +394,24 @@
                 end function
             end interface
 
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
             ok = .TRUE.
 
-            x = xx0
+            x = x0
             xh = 0.0D0
 
-            do k=1, MAX_ITER
+            do k=1, t_max_iter
 !               Compute Jacobian Matrix
                 do i=1, n
 !                   Partial derivative with respect do the i-th coordinates                    
@@ -324,7 +425,7 @@
 
                 if (.NOT. ok) then
                     exit
-                else if ((NORM(dx, n) / NORM(xdx, n)) > TOL) then
+                else if ((NORM(dx, n) / NORM(xdx, n)) > t_tol) then
                     x = xdx
                 else
                     if (VEDGE(x)) then
@@ -337,15 +438,18 @@
             return
         end function
 
-        function sys_broyden(ff, xx0, B0, n, ok) result (x)
+        function sys_broyden(ff, x0, B0, n, ok, tol, max_iter) result (x)
             implicit none
-            integer :: n
-            double precision, dimension(n), intent(in) :: xx0
+            logical, intent(out) :: ok
+            integer :: n, k, t_max_iter
+            integer, optional :: max_iter
+            double precision, dimension(n), intent(in) :: x0
             double precision, dimension(n, n), intent(in) :: B0
             double precision, dimension(n) :: x, xdx, dx, dff
             double precision, dimension(n, n) :: J
-            integer :: k
-            logical, intent(out) :: ok
+            double precision :: t_tol
+            double precision, optional :: tol
+
             interface
                 function ff(x, n) result (y)
                     implicit none
@@ -354,23 +458,35 @@
                 end function
             end interface
 
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
             ok = .TRUE.
 
-            x = xx0
+            x = x0
             J = B0
 
-            do k=1, MAX_ITER
+            do k=1, t_max_iter
                 dx = -MATMUL(inv(J, n, ok), ff(x, n))
                 if (.NOT. ok) then
                     exit
                 end if
                 xdx = x + dx
                 dff = ff(xdx, n) - ff(x, n)
-                if ((norm(dx, n) / norm(xdx, n)) > TOL) then
+                if ((norm(dx, n) / norm(xdx, n)) > t_tol) then
                     J = J + OUTER_PRODUCT((dff - MATMUL(J, dx)) / DOT_PRODUCT(dx, dx), dx, n)
                     x = xdx
                 else
-                    if (VEDGE(x)) then
+                    if (VEDGE(x) .OR. (NORM(ff(x, n), n) > t_tol)) then
                         ok = .FALSE.
                     end if
                     return
@@ -380,14 +496,17 @@
             return
         end function
 
-        function sys_least_squares(ff, dff, x, y, b0, m, n, ok) result (b)
+        function sys_least_squares(ff, dff, x, y, b0, m, n, ok, tol, max_iter) result (b)
             implicit none
-            integer :: m, n
+            logical, intent(out) :: ok
+            integer :: m, n, k, t_max_iter
+            integer, optional :: max_iter
             double precision, dimension(n), intent(in) :: x, y, b0
             double precision, dimension(n) :: b, bdb, db
             double precision :: J(n, n) 
-            integer :: k
-            logical, intent(out) :: ok
+            double precision :: t_tol
+            double precision, optional :: tol
+            
             interface
                 function ff(x, b, m, n) result (z)
                     implicit none
@@ -408,21 +527,33 @@
                 end function
             end interface
 
-            b = b0
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
 
             ok = .TRUE.
 
-            do k=1, MAX_ITER
+            b = b0
+
+            do k=1, t_max_iter
                 J = dff(x, b, m, n)
                 db = -MATMUL(inv(MATMUL(TRANSPOSE(J), J), n, ok), MATMUL(TRANSPOSE(J), ff(x, b, m, n) - y))
                 bdb = b + db
 
                 if (.NOT. ok) then
                     exit
-                else if ((NORM(db, m) / NORM(bdb, m)) > TOL) then
+                else if ((NORM(db, m) / NORM(bdb, m)) > t_tol) then
                     b = bdb
                 else
-                    if (VEDGE(b)) then
+                    if (VEDGE(b) .OR. (NORM(ff(x, b, m, n) - y, n) > t_tol)) then
                         ok = .FALSE.
                     end if
                     return
@@ -432,14 +563,17 @@
             return
         end function
 
-        function sys_least_squares_num(ff, x, y, b0, m, n, ok) result (b)
+        function sys_least_squares_num(ff, x, y, b0, m, n, ok, tol, max_iter) result (b)
 !           Same as previous function, with numerical partial derivatives
             implicit none
-            integer :: m, n
+            integer :: m, n, i, k, t_max_iter
+            integer, optional :: max_iter
             double precision, dimension(n), intent(in) :: x, y, b0
             double precision, dimension(n) :: b, bdb, db, bh
             double precision :: J(n, n) 
-            integer :: i, k
+            double precision :: t_tol
+            double precision, optional :: tol
+
             logical, intent(out) :: ok
             interface
                 function ff(x, b, m, n) result (z)
@@ -451,12 +585,24 @@
                 end function
             end interface
 
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
             ok = .TRUE.
 
             bh = 0.0D0
             b = b0
 
-            do k=1, MAX_ITER
+            do k=1, t_max_iter
 !               Compute Jacobian Matrix
                 do i=1, m
 !                   Partial derivative with respect do the i-th coordinates                    
@@ -469,10 +615,10 @@
 
                 if (.NOT. ok) then
                     exit
-                else if ((NORM(db, m) / NORM(bdb, m)) > TOL) then
+                else if ((NORM(db, m) / NORM(bdb, m)) > t_tol) then
                     b = bdb
                 else
-                    if (VEDGE(b)) then
+                    if (VEDGE(b) .OR. (NORM(ff(x, b, m, n) - y, n) > t_tol)) then
                         ok = .FALSE.
                     end if
                     return
@@ -607,108 +753,98 @@
             return
         end function
 
-        recursive function adapt_int(f, a, b, n, acc, kind) result (s)
+        recursive function adapt_int(f, a, b, n, tol, kind) result (s)
             implicit none
             integer :: n
             character (len=*), optional :: kind
             double precision, intent(in) :: a, b
-            double precision, optional :: acc
+            double precision :: p, q, e, r, s, t_tol
+            double precision, optional :: tol
             interface
                 function f(x) result (y)
                     double precision :: x, y
                 end function
             end interface
-            double precision :: p, q, e, r, s, t_tol
-
-            if (.NOT. PRESENT(acc)) then
-                t_tol = TOL
+            
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
             else
-                t_tol = acc
+                t_tol = tol
             end if
 
-            p = num_int(f, a, b, n / 2, kind = kind)
-            q = num_int(f, a, b, n, kind = kind)
-            e = DABS(p - q)
-            if (e <= t_tol) then
-                s = q
+            if (n > 1) then
+                p = num_int(f, a, b, n / 2, kind = kind)
+                q = num_int(f, a, b, n, kind = kind)
+                e = DABS(p - q)
+                if (e <= t_tol) then
+                    s = q
+                else
+                    r = (b + a) / 2
+                    s = adapt_int(f, a, r, n, tol=t_tol, kind=kind) + adapt_int(f, r, b, n, tol=t_tol, kind=kind)
+                end if
+                return
             else
-                r = (b + a) / 2
-                s = adapt_int(f, a, r, n, acc = t_tol, kind = kind) + adapt_int(f, r, b, n, acc = t_tol, kind = kind)
+                s = 0.0D0
+                return
             end if
-            return
         end function
 
-        function romberg_int(f, a, b, n, acc) result (s)
+        function romberg_int(f, a, b, n, tol) result (s)
             implicit none
             integer, intent(in) :: n
             double precision, intent(in) :: a, b
-            double precision, optional :: acc
+            double precision, optional :: tol
             interface
                 function f(x) result (y)
                     double precision :: x, y
                 end function
             end interface
             integer :: i, j, k, t_n
-            double precision :: p, r, s, dx, t_tol
+            double precision :: s, dx, t_tol
 !           Previous row, Current row and Temporary row            
-            double precision, dimension(:), allocatable :: RP, RC, RT
+            double precision, dimension(:, :), allocatable :: R
             
-            if (.NOT. PRESENT(acc)) then
-                t_tol = TOL
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
             else
-                t_tol = acc
+                t_tol = tol
             end if
 
             t_n = ILOG2(n)
 
-            allocate(RP(t_n))
-            allocate(RC(t_n))
-            allocate(RT(t_n))
-
             dx = (b - a)
 
-            RP(1) = (f(a) + f(b)) * (dx / 2)
+            allocate(R(t_n + 1, t_n + 1))
 
-            do i=2, t_n - 1
+            R(1, 1) = (f(a) + f(b)) * dx / 2
+
+            do i = 1, t_n
                 dx = dx / 2
 
-                r = 0
-                k = 2 ** (i - 1)
-
-                do j = 1, k
-                    r = r + f(a + (2 * j - 1) * dx)
-                end do
-
-                RC(1) = (dx * r) + (RP(1) / 2)
+                R(i + 1, 1) = (f(a) + 2 * SUM((/ (f(a + k*dx), k=1, (2**i)-1) /)) + f(b)) * dx / 2;
 
                 do j = 1, i
-                    p = 4 ** j
-                    RC(j + 1) = (p * RC(j) - RP(j)) / (p - 1)
+                    k = 4 ** j
+                    R(i + 1, j + 1) = (k*R(i + 1, j) - R(i, j)) / (k - 1)
                 end do
 
-                if ((i > 2) .AND. (DABS(RP(i - 1) - RC(i)) < acc)) then
-                    RP(t_n) = RC(i - 1)
+                if (DABS(R(i + 1, i + 1) - R(i, i)) > t_tol) then
+                    continue
+                else
                     exit
-                end if 
-
-                RT(:) = RP(:)
-                RP(:) = RC(:)
-                RC(:) = RT(:)
+                end if
             end do
-            s = RP(t_n)
+            s = R(i, i)
 
-            deallocate(RP)
-            deallocate(RC)
-            deallocate(RT)
-            return 
+            deallocate(R)
         end function
 
         function richard(f, x, p, q, dx, kind) result (y)
 !           Richard Extrapolation
             implicit none
-            double precision, optional :: dx
+            double precision, optional :: dx, p, q
             character(len=*), optional :: kind
-            double precision :: x, y, p, q, t_dx, dx1, dx2, d1, d2
+            double precision :: x, y, t_p, t_q, t_dx, dx1, dx2, d1, d2
             interface
                 function f(x) result (y)
                     implicit none
@@ -722,12 +858,24 @@
                 t_dx = dx
             end if
 
+            if (.NOT. PRESENT(p)) then
+                t_p = 1.0D0
+            else
+                t_p = p
+            end if
+
+            if (.NOT. PRESENT(q)) then
+                t_q = 2.0D0
+            else
+                t_q = q
+            end if
+
             dx1 = t_dx
             d1 = d(f, x, dx1, kind = kind)
-            dx2 = dx1 / q
+            dx2 = dx1 / t_q
             d2 = d(f, x, dx2, kind = kind)
 
-            y = d1 + (d1 - d2) / ((q ** (-p)) - 1.0D0)
+            y = d1 + (d1 - d2) / ((t_q ** (-t_p)) - 1.0D0)
             return
         end function
 

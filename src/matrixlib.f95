@@ -3,10 +3,8 @@
     module Matrix
         use Util
         implicit none
-        integer :: NMAX = 1000
-        integer :: KMAX = 1000
-        integer :: MAX_ITER = 1000
-        double precision :: TOL = 1.0D-4
+        integer :: D_MAX_ITER = 1000
+        double precision :: D_TOL = 1.0D-5
     contains
         subroutine ill_cond()
 !           Prompts the user with an ill-conditioning warning.
@@ -97,24 +95,57 @@
 
 
 !       =========== Matrix Methods ============
-        function rand_vector(n) result (x)
-            implicit none
-            integer :: n
-            double precision :: x (n)
-            integer :: i
-            do i = 1, n
-                x(i) = DRAND(-1.0D0, 1.0D0)
+
+        function clip(x, n, a, b) result (y)
+            integer, intent(in) :: n
+            integer :: k
+            double precision, intent(in) :: a, b
+            double precision, dimension(n), intent(in) :: x
+            double precision, dimension(n) :: y
+
+            do k=1, n
+                if ((a <= x(k)) .AND. (x(k) <= b)) then
+                    y(k) = x(k)
+                else
+                    y(k) = DNAN
+                end if
             end do
             return
         end function
 
-        function rand_matrix(m, n) result (A)
+        function rand_vector(n, a, b) result (r)
             implicit none
-            integer :: m, n
-            double precision :: A(m, n)
-            integer :: i
+            integer :: n, i
+            double precision, dimension(n) :: r
+            double precision, optional :: a, b
+            double precision :: t_a, t_b
+            
+            if (.NOT. PRESENT(a)) then
+                t_a = -1.0D0
+            else
+                t_a = a
+            end if
+
+            if (.NOT. PRESENT(b)) then
+                t_b = 1.0D0
+            else
+                t_b = b
+            end if
+
+            do i = 1, n
+                r(i) = DRAND(t_a, t_b)
+            end do
+            return
+        end function
+
+        function rand_matrix(m, n, a, b) result (R)
+            implicit none
+            integer :: m, n, i
+            double precision, dimension(m, n) :: R
+            double precision, optional :: a, b
+            
             do i = 1, m
-                A(i, :) = rand_vector(n)
+                R(i, :) = rand_vector(n, a=a, b=b)
             end do
             return
         end function
@@ -574,18 +605,30 @@
             end if
         end function
 
-        function Jacobi(A, x, b, e, n) result (ok)
+        function Jacobi(A, x, b, e, n, tol, max_iter) result (ok)
             implicit none
             
-            integer :: n
+            logical :: ok
+
+            integer :: n, i, k, t_max_iter
+            integer, optional :: max_iter
 
             double precision :: A(n, n)
             double precision :: b(n), x(n), x0(n)
-            double precision :: e
+            double precision :: e, t_tol
+            double precision, optional :: tol
 
-            logical :: ok
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
 
-            integer :: i, k
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
 
             x0 = rand_vector(n)
 
@@ -595,13 +638,13 @@
                 return
             end if
 
-            do k = 1, KMAX
+            do k = 1, t_max_iter
                 do i = 1, n
                     x(i) = (b(i) - dot_product(A(i, :), x0)) / A(i, i)
                 end do
                 x0(:) = x(:)
                 e = vector_norm(matmul(A, x) - b, n)
-                if (e < TOL) then
+                if (e < t_tol) then
                     return
                 end if
             end do
@@ -638,17 +681,27 @@
             end if
         end function
 
-        function Gauss_Seidel(A, x, b, e, n) result (ok)
+        function Gauss_Seidel(A, x, b, e, n, tol, max_iter) result (ok)
             implicit none
-
-            integer :: n
-
+            logical :: ok
+            integer :: n, i, j, k, t_max_iter
+            integer, optional :: max_iter
             double precision :: A(n, n)
             double precision :: b(n), x(n)
-            double precision :: e, s
+            double precision :: e, s, t_tol
+            double precision, optional :: tol
 
-            logical :: ok
-            integer :: i, j, k
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
 
             ok = Gauss_Seidel_cond(A, n)
 
@@ -656,7 +709,7 @@
                 return
             end if
 
-            do k = 1, KMAX
+            do k = 1, t_max_iter
                 do i = 1, n
                     s = 0.0D0
                     do j = 1, n
@@ -667,7 +720,7 @@
                     x(i) = (b(i) - s) / A(i, i)
                 end do
                 e = vector_norm(matmul(A, x) - b, n)
-                if (e < TOL) then
+                if (e < t_tol) then
                     return
                 end if
             end do
@@ -769,16 +822,27 @@
 !       ==========================================
 
 !       ============ Power Method ============
-        function power_method(A, n, x, l) result (ok)
+        function power_method(A, n, x, l, tol, max_iter) result (ok)
             implicit none
-            integer :: n
-            integer :: k = 0
-
+            logical :: ok
+            integer :: n, k, t_max_iter
+            integer, optional :: max_iter
             double precision :: A(n, n)
             double precision :: x(n)
-            double precision :: l, ll
+            double precision :: l, ll, t_tol
+            double precision, optional :: tol
 
-            logical :: ok
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
 
 !           Begin with random normal vector and set 1st component to zero
             x(:) = rand_vector(n)
@@ -788,7 +852,7 @@
             l = 0.0D0
 
 !           Checks if error tolerance was reached          
-            do while (k < MAX_ITER)
+            do k=1, t_max_iter
                 ll = l
 
                 x(:) = matmul(A, x)                
@@ -799,32 +863,40 @@
 !               Retrieve Eigenvector                
                 x(:) = x(:) / l
 
-                if (dabs((l - ll) / l) < TOL) then
+                if (dabs((l - ll) / l) < t_tol) then
                     ok = .TRUE.
                     return
-                else 
-                    k = k + 1
-                    continue
                 end if
             end do
             ok = .FALSE.
             return
         end function
         
-        function Jacobi_eigen(A, n, L, X) result (ok)
+        function Jacobi_eigen(A, n, L, X, tol, max_iter) result (ok)
             implicit none
-            integer :: n, i, j, u, v
-            integer :: k = 0
-
-            double precision :: A(n, n), L(n, n), X(n, n), P(n, n)
-            double precision :: y, z
-
             logical :: ok
+            integer :: n, i, j, k, u, v, t_max_iter
+            integer, optional :: max_iter
+            double precision :: A(n, n), L(n, n), X(n, n), P(n, n)
+            double precision :: y, z, t_tol
+            double precision, optional :: tol
+
+            if (.NOT. PRESENT(tol)) then
+                t_tol = D_TOL
+            else
+                t_tol = tol
+            end if
+
+            if (.NOT. PRESENT(max_iter)) then
+                t_max_iter = D_MAX_ITER
+            else
+                t_max_iter = max_iter
+            end if
 
             X(:, :) = id_matrix(n)
             L(:, :) = A(:, :)
 
-            do while (k < MAX_ITER)
+            do k=1, t_max_iter
                 z = 0.0D0
                 do i = 1, n
                     do j = 1, i - 1
@@ -839,11 +911,10 @@
                     end do
                 end do
 
-                if (z >= TOL) then
+                if (z >= t_tol) then
                     P(:, :) = given_matrix(L, n, u, v)
                     L(:, :) = matmul(matmul(transpose(P), L), P)
                     X(:, :) = matmul(X, P)
-                    k = k + 1
                 else
                     ok = .TRUE.
                     return

@@ -1,2 +1,2 @@
-# COC473
-Álgebra Linear Computacional @ UFRJ
+# COC473 Álgebra Linear Computacional @ ECI-UFRJ
+## (_Numerical Linear Algebra_)

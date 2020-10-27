@@ -1,0 +1,215 @@
+ 2)
+f(x) = exp(-x²/2) / √(2 π)
+ [a, b] = [0, 1]
+ :: Integração Polinomial ::
+ I1 = ∫f(x) dx ≈ 0.3413447460735613
+ :: Quadratura de Gauss-Legendre ::
+ I1 = ∫f(x) dx ≈ 0.34134474606854304
+ :: Método de Romberg ::
+ I1 = ∫f(x) dx ≈ 0.34134391691400612
+ [a, b] = [0, 5]
+ :: Integração Polinomial ::
+ I2 = ∫f(x) dx ≈ 0.49957515630078708
+ :: Quadratura de Gauss-Legendre ::
+ I2 = ∫f(x) dx ≈ 0.49999971572535451
+ :: Método de Romberg ::
+ I2 = ∫f(x) dx ≈ 0.50108201123349327
+ 
+3)
+Sσ(ω) = RAO(ω)²  Sη(ω)
+	RAO(ω) = 1 / √((1 - (ω/ωn)²)² + (2ξω/ωn)²)
+ [a, b] = [0, 10]
+ 
+m0 ~ Sη(ω) = 2
+
+ :: Valor de referência (Integração Adaptativa) tol = 1E-8 ::
+ m0 = ∫Sσ(ω) dω ≈ 31.415251823781364
+ :: Integração Polinomial ::
+ m0 = ∫Sσ(ω) dω ≈ 52.859249702281744
+ :: Quadratura de Gauss-Legendre ::
+ m0 = ∫Sσ(ω) dω ≈ 6.5985596152553274
+ :: Método de Romberg ::
+ m0 = ∫Sσ(ω) dω ≈ 11.716280480263372
+ 
+m2 ~ Sη(ω) = 2
+
+ :: Valor de referência (Integração Adaptativa) tol = 1E-8 ::
+ m2 = ∫Sσ(ω) dω ≈ 31.214587916308048
+ :: Integração Polinomial ::
+ m2 = ∫Sσ(ω) dω ≈ 65.209981049518717
+ :: Quadratura de Gauss-Legendre ::
+ m2 = ∫Sσ(ω) dω ≈ 5.3569850092067099
+ :: Método de Romberg ::
+ m2 = ∫Sσ(ω) dω ≈ 17.819159784396721
+ 
+4)
+Sσ(ω) = RAO(ω)²  Sη(ω)
+	RAO(ω) = 1 / √((1 - (ω/ωn)²)² + (2ξω/ωn)²)
+ [a, b] = [0, 10]
+ 
+m0 ~ Sη(ω) = ((4 π³ Hs²) / (ω⁵ Tz⁴)) exp(-(16 π³) / (ω⁴ Tz⁴))
+
+ :: Valor de referência (Integração Adaptativa) tol = 1E-8 ::
+ m0 = ∫Sσ(ω) dω ≈ 11.227882149614736
+ :: Integração Polinomial ::
+ m0 = ∫Sσ(ω) dω ≈ ?
+ :: Quadratura de Gauss-Legendre ::
+ m0 = ∫Sσ(ω) dω ≈ 0.75329021329714352
+ :: Método de Romberg ::
+ m0 = ∫Sσ(ω) dω ≈ ?
+ 
+m2 ~ Sη(ω) = ((4 π³ Hs²) / (ω⁵ Tz⁴)) exp(-(16 π³) / (ω⁴ Tz⁴))
+
+ :: Valor de referência (Integração Adaptativa) tol = 1E-8 ::
+ m2 = ∫Sσ(ω) dω ≈ 10.996743577539315
+ :: Integração Polinomial ::
+ m2 = ∫Sσ(ω) dω ≈ ?
+ :: Quadratura de Gauss-Legendre ::
+ m2 = ∫Sσ(ω) dω ≈ 0.48426836843985055
+ :: Método de Romberg ::
+ m2 = ∫Sσ(ω) dω ≈ ?
+ 
+5) f(x) = 2 + 2x - x² + 3x³
+ [a, b] = [0, 4]
+ :: Integração Polinomial ::
+ n = 4
+ A = ∫f(x) dx ≈ 194.66666666666669
+ :: Quadratura de Gauss-Legendre ::
+ n = 2
+ A = ∫f(x) dx ≈ 194.66666666666669
+ n = 10
+ 
+6) f(x) = 1 / (1 + x²)
+ [a, b] = [0, 3]
+ :: Integração Polinomial ::
+ A = ∫f(x) dx ≈ 1.2494163058828742
+ :: Quadratura de Gauss-Legendre ::
+ A = ∫f(x) dx ≈ 1.2490458082502331
+ :: Método de Romberg ::
+ A = ∫f(x) dx ≈ 1.2499809332223779
+ 
+7)
+ n = 10
+ A1 ~ f(x) = exp(- x²/2) / √(2 π)
+ [a, b] = [-∞, 1]
+ :: Quadratura de Gauss-Hermite e de Gauss-Legendre ::
+ A1 = ∫f(x) dx ≈ 0.84133856560070919
+ A2 ~ f(x) = x² exp(- x²/2) / √(2 π)
+ [a, b] = [-∞, ∞]
+ :: Quadratura de Gauss-Hermite ::
+ A2 = ∫f(x) dx ≈ 0.99966839273752539
+ 
+:: Complmento ::
+
+ 
+1)
+ f(x) = x³ + exp(-x)
+ f'(x) = 3 x² - exp(-x)
+ :: Derivada Analítica ::
+ f'(3) = 26.950212931632137
+ :: Diferenças Finitas ::
+
+ :: Diferença Central (Δx = 1E-2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 9.9170210795307412E-005
+ :: Passo à frente (Δx = 1E-2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 9.0348107627221452E-002
+ :: Passo atrás (Δx = 1E-2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 9.0149767205630837E-002
+ 
+:: Extrapolação de Richard ::
+ :: Diferença Central (Δx = 1E-2, p = 1)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 4.9585105180938172E-005
+ :: Diferença Central (Δx = 1E-2, p = 2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 1.4566126083082054E-013
+ :: Passo à frente (Δx = 1E-2, p = 1)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 4.9586659315536963E-005
+ :: Passo à frente (Δx = 1E-2, p = 2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 3.0082978102864644E-002
+ :: Passo atrás (Δx = 1E-2, p = 1)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 4.9583551046339380E-005
+ :: Passo atrás (Δx = 1E-2, p = 2)::
+ f'(3) ≈ 26.950212931632137
+ |δy| = 3.0082978102573321E-002
+ 
+2)
+ f(x) = ³√x + log(x)
+ f'(x) = 1 / (3 ³√x²) + (1 / x)
+ :: Derivada Analítica ::
+ f'(2) = 0.70998684164914549
+ :: Diferenças Finitas ::
+
+ :: Diferença Central (Δx = 1E-2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 5.1389023598691352E-006
+ :: Passo à frente (Δx = 1E-2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 1.5948580328932760E-003
+ :: Passo atrás (Δx = 1E-2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 1.6051358376130143E-003
+ 
+:: Extrapolação de Richard ::
+ :: Diferença Central (Δx = 1E-2, p = 1)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 2.5694791288000118E-006
+ :: Diferença Central (Δx = 1E-2, p = 2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 1.8632539955376615E-011
+ :: Passo à frente (Δx = 1E-2, p = 1)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 2.5553296916225321E-006
+ :: Passo à frente (Δx = 1E-2, p = 2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 5.3332289742547001E-004
+ :: Passo atrás (Δx = 1E-2, p = 1)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 2.5836285659774916E-006
+ :: Passo atrás (Δx = 1E-2, p = 2)::
+ f'(2) ≈ 0.70998684164914549
+ |δy| = 5.3332286016039010E-004
+ 
+3)
+ f(x) = 1 - exp(-x² / 25)
+ f'(x) = (2 x / 25) exp(-x² / 25)
+ :: Derivada Analítica ::
+ f'(6) = 0.11372532416741847
+ :: Diferenças Finitas ::
+
+ :: Diferença Central (Δx = 1E-2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 1.8196394321878806E-008
+ :: Passo à frente (Δx = 1E-2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 1.7818749274416124E-004
+ :: Passo atrás (Δx = 1E-2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 1.7815109995551748E-004
+ 
+:: Extrapolação de Richard ::
+ :: Diferença Central (Δx = 1E-2, p = 1)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 9.0983055117677125E-009
+ :: Diferença Central (Δx = 1E-2, p = 2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 7.2233885539674247E-014
+ :: Passo à frente (Δx = 1E-2, p = 1)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 8.8146768356667238E-009
+ :: Passo à frente (Δx = 1E-2, p = 2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 5.9389954463501260E-005
+ :: Passo atrás (Δx = 1E-2, p = 1)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 9.3819341878687013E-009
+ :: Passo atrás (Δx = 1E-2, p = 2)::
+ f'(6) ≈ 0.11372532416741847
+ |δy| = 5.9389954607969031E-005
+ :: Sucesso ::

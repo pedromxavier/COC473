@@ -1,15 +1,12 @@
 program main5
-    use Func
-    use Calc
     use Util
+    use Func
+    use Matrix
+    use Calc
+    use Plotlib
     implicit none
 
-    integer :: i
-
-    integer :: n = 10
-    double precision :: a, b, r, s
-
-    character(len=32) :: n_chr
+    double precision :: XMIN, XMAX, YMIN, YMAX
 
 !   Command-line Args
     integer :: argc
@@ -23,200 +20,572 @@ program main5
     argc = iargc()
 
     if (argc == 0) then
-        goto 099
-    else if (argc == 1) then
-        call getarg(1, n_chr)
-        read (unit=n_chr, fmt=*) n
-        goto 099
+        goto 100
     else
-        goto 101
+        goto 11
     end if
 
-!   ====== Begin =====================================    
-099 call info("Nº de pontos de integração: "//STR(n))
-    goto 200
-
 !   ====== Success ===================================
-100 call info(':: Sucesso ::')
+10  call info(':: Sucesso ::')
     goto 1
 !   ====== Errors ====================================
-101 call error('Este programa não aceita mais do que um parâmetro (número de pontos de integração).')
+11  call error('Este programa não aceita parâmetross.')
     goto 1
 !   ====== Finish ====================================
 1   stop
 !   ==================================================
 
+100 goto 200
+
+200 call Q2
+    goto 300
+
+300 call Q3
+    goto 400
+
+400 call Q4
+    goto 500
+
+500 call Q5
+    goto 600
+
+600 call Q6
+    goto 700
+
+700 call Q7
+    goto 800
+
+800 call warn(ENDL//":: Complmento ::"//ENDL)
+    call QE1; call QE2; call QE3;
+    goto 10
+
 !   ===============================
-200 call info(ENDL//"2) "//F6_NAME)
-    i = 0
-    goto 201
 
-201 i = i + 1
-    go to(210, 220, 300), i
-!   ===============================
-300 call info(ENDL//"3) "//F78_NAME)
-    i = 0
-    goto 301
+    contains
 
-301 i = i + 1
-    go to(310, 400), i
-!   ===============================
-400 call info(ENDL//"4) "//F78_NAME)
-    i = 0
-    goto 401
+    subroutine Q2
+        implicit none
+        integer :: n = 10
+        double precision :: a, b, s
 
-401 i = i + 1
-    go to(410, 500), i
-!   ===============================   
-500 call info(ENDL//"5) "//F9_NAME)
-    i = 0
-    goto 501
+        call info("2)"//ENDL//F6_NAME)
+        a = 0.0D0
+        b = 1.0D0
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        call info(":: Integração Polinomial ::")
+        s = num_int(f6, a, b, n, kind="polynomial")
+        call blue("I1 = ∫f(x) dx ≈ "//DSTR(s))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        s = num_int(f6, a, b, n, kind="gauss-legendre")
+        call blue("I1 = ∫f(x) dx ≈ "//DSTR(s))
+        call info(":: Método de Romberg ::")
+        s = num_int(f6, a, b, n, kind="romberg")
+        call blue("I1 = ∫f(x) dx ≈ "//DSTR(s))
 
-501 i = i + 1
-    go to(510, 600), i
-!   ===============================  
-600 call info(ENDL//"6) "//F10_NAME)
-    i = 0
-    goto 601
+        a = 0.0D0
+        b = 5.0D0
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        call info(":: Integração Polinomial ::")
+        s = num_int(f6, a, b, n, kind="polynomial")
+        call blue("I2 = ∫f(x) dx ≈ "//DSTR(s))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        s = num_int(f6, a, b, n, kind="gauss-legendre")
+        call blue("I2 = ∫f(x) dx ≈ "//DSTR(s))
+        call info(":: Método de Romberg ::")
+        s = num_int(f6, a, b, n, kind="romberg")
+        call blue("I2 = ∫f(x) dx ≈ "//DSTR(s))
 
-601 i = i + 1
-    go to(610, 700), i
-!   ===============================
-700 call info(ENDL//"7)")
-    i = 0
-    goto 701
+    end subroutine
 
-701 i = i + 1
-    go to(710, 720, 800), i
-!   =============================== 
-800 goto 100
+    subroutine Q3
+        implicit none
+        integer :: n
+        double precision :: a, b, r
+        double precision, dimension(INT_N) :: x
+        double precision, dimension(4, INT_N) :: y
 
-210 a = 0.0D0
-    b = 1.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    s = num_int(f6, a, b, n, kind="polynomial")
-    call show("∫f(x) dx", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f6, a, b, n, kind="gauss-legendre")
-    call show("∫f(x) dx", s)
-    goto 201
+        type(StringArray), dimension(:), allocatable :: legend, with
 
-220 a = 0.0D0
-    b = 5.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    s = num_int(f6, a, b, n, kind="polynomial")
-    call show("∫f(x) dx", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f6, a, b, n, kind="gauss-legendre")
-    call show("∫f(x) dx", s)
-    goto 201
+        allocate(legend(4), with(4))
 
-310 call info("m0) "//ENDL//TAB//F7a_NAME)
-    a = 0.00D0
-    b = 10.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    s = num_int(f7a, a, b, n, kind="polynomial")
-    call show("∫f(ω) dω", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f7a, a, b, n, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    call info(":: Método de Romberg ::")
-    s = num_int(f7a, a, b, n, kind="romberg")
-    call show("∫f(ω) dω", s)
-    call info(":: Gauss Adaptativo ::")
-    s = adapt_int(f7a, a, b, n, acc=1.0D-6, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
+        legend(1)%str = 'Polinomial'
+        legend(2)%str = 'Gauss-Legendre'
+        legend(3)%str = 'Romberg'
+        legend(4)%str = 'Adaptativo (Gauss)'
 
-    call info("m2) "//ENDL//TAB//F7b_NAME)
-    call info(":: Integração Polinomial ::")
-    s = num_int(f7b, a, b, n, kind="polynomial")
-    call show("∫f(ω) dω", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f7b, a, b, n, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    call info(":: Método de Romberg ::")
-    s = num_int(f7b, a, b, n, kind="romberg")
-    call show("∫f(ω) dω", s)
-    call info(":: Gauss Adaptativo ::")
-    s = adapt_int(f7b, a, b, n, acc=1.0D-6, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    goto 301
+        with(1)%str = 'linespoints'
+        with(2)%str = 'linespoints'
+        with(3)%str = 'linespoints'
+        with(4)%str = 'lines'
 
-410 call info("m0) "//ENDL//TAB//F8a_NAME)
-    a = 0.00D0
-    b = 10.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    s = num_int(f8a, a, b, n, kind="polynomial")
-    call show("∫f(ω) dω", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f8a, a, b, n, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    call info(":: Método de Romberg ::")
-    s = num_int(f8a, a, b, n, kind="romberg")
-    call show("∫f(ω) dω", s)
-    call info(":: Gauss Adaptativo ::")
-    s = adapt_int(f8a, a, b, n, acc=1.0D-6, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
+        a = 0.00D0
+        b = 10.0D0
 
-    call info("m2) "//ENDL//TAB//F8b_NAME)
-    call info(":: Integração Polinomial ::")
-    s = num_int(f8b, a, b, n, kind="polynomial")
-    call show("∫f(ω) dω", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f8b, a, b, n, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    call info(":: Método de Romberg ::")
-    s = num_int(f8b, a, b, n, kind="romberg")
-    call show("∫f(ω) dω", s)
-    call info(":: Gauss Adaptativo ::")
-    s = adapt_int(f8b, a, b, n, acc=1.0D-6, kind="gauss-legendre")
-    call show("∫f(ω) dω", s)
-    goto 401
+        call info(ENDL//"3)"//ENDL//F7_NAME)
 
-510 a = 0.0D0
-    b = 4.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    call show('n', 4.0D0)
-    s = num_int(f9, a, b, 4, kind="polynomial")
-    call show("∫f(x) dx", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    call show('n', 2.0D0)
-    s = num_int(f9, a, b, 2, kind="gauss-legendre")
-    call show("∫f(x) dx", s)
-    goto 501
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
 
-610 a = 0.0D0
-    b = 3.0D0
-    call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
-    call info(":: Integração Polinomial ::")
-    s = num_int(f10, a, b, n, kind="polynomial")
-    call show("∫f(x) dx", s)
-    call info(":: Quadratura de Gauss-Legendre ::")
-    s = num_int(f10, a, b, n, kind="gauss-legendre")
-    call show("∫f(x) dx", s)
-    goto 601
+        INT_N = 128
 
-710 call info("A1) "//F11_NAME)
-    a = DNINF
-    b = 1.0D0
-    call info("[a, b] = [-∞, "//DSTR(b)//"]")
-    call info(":: Quadratura de Gauss-Hermite e de Gauss-Legendre ::")
-    r = num_int(f11a, a, -a, n, kind="gauss-hermite")
-    s = num_int(f11b, -b, b, n, kind="gauss-legendre")
-    call show("∫f(x) dx", r + s)
-    goto 701
+        XMIN = 1.0D0
+        XMAX = INT_N
+        YMIN = -100.0D0
+        YMAX = 300.0D0
 
-720 call info("A2) "//F12_NAME)
-    a = DNINF
-    b = DINF
-    call info("[a, b] = [-∞, ∞]")
-    call info(":: Quadratura de Gauss-Hermite ::")
-    s = num_int(f12, a, b, n, kind="gauss-hermite")
-    call show("∫f(x) dx", s)
-    goto 701
+        x = (/ (n, n=1, INT_N) /)
+
+        call begin_plot(fname='L5-Q3')
+
+        call subplots(2, 1)
+
+        call info(ENDL//"m0 ~ "//F7a_NAME//ENDL)
+
+        r = adapt_int(f7a, a, b, INT_N, tol=1.0D-8, kind="gauss-legendre")
+
+        call info(":: Valor de referência (Integração Adaptativa) tol = 1E-8 ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(r))
+
+        do n = 1, INT_N
+            y(:, n) = (/ &
+                num_int(f7a, a, b, n, kind="polynomial"), &
+!           
+                num_int(f7a, a, b, n, kind="gauss-legendre"), &
+!
+                num_int(f7a, a, b, n, kind="romberg"), &
+!
+                r &
+            /)
+        end do
+
+        call info(":: Integração Polinomial ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(1, 10)))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(2, 10)))
+        call info(":: Método de Romberg ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(3, 10)))
+
+        do n = 1, 4
+            call subplot(1, 1, x, y(n, :), INT_N)
+        end do
+
+        call subplot_config(1, 1, title='m0 = ∫Sσ(ω) dω ≈ '//DSTR(r), xlabel='n', ylabel='m0', grid=.TRUE., &
+            legend=legend, with=with, xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX)
+
+        call info(ENDL//"m2 ~ "//F7b_NAME//ENDL)
+
+        r = adapt_int(f7b, a, b, INT_N, tol=1.0D-8, kind="gauss-legendre")
+
+        call info(":: Valor de referência (Integração Adaptativa) tol = 1E-8 ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(r))
+
+        do n = 1, INT_N
+            y(:, n) = (/ &
+                num_int(f7b, a, b, n, kind="polynomial"), &
+!           
+                num_int(f7b, a, b, n, kind="gauss-legendre"), &
+!
+                num_int(f7b, a, b, n, kind="romberg"), &
+!
+                r &
+            /)
+        end do
+
+        call info(":: Integração Polinomial ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(1, 10)))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(2, 10)))
+        call info(":: Método de Romberg ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(3, 10)))
+
+        do n = 1, 4
+            call subplot(2, 1, x, y(n, :), INT_N)
+        end do
+
+        call subplot_config(2, 1, title='m2 = ∫ω² Sσ(ω) dω ≈ '//DSTR(r), xlabel='n', ylabel='m2', grid=.TRUE., &
+            legend=legend, with=with, xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX)
+
+        call render_plot(clean=.TRUE.)
+    end subroutine
+
+    subroutine Q4
+        implicit none
+        integer :: n
+        double precision :: a, b, r
+        double precision, dimension(INT_N) :: x
+        double precision, dimension(4, INT_N) :: y
+
+        type(StringArray), dimension(:), allocatable :: legend, with
+
+        allocate(legend(4), with(4))
+
+        legend(1)%str = 'Polinomial'
+        legend(2)%str = 'Gauss-Legendre'
+        legend(3)%str = 'Romberg'
+        legend(4)%str = 'Adaptativo (Gauss)'
+
+        with(1)%str = 'linespoints'
+        with(2)%str = 'linespoints'
+        with(3)%str = 'linespoints'
+        with(4)%str = 'lines'
+
+        a = 0.00D0
+        b = 10.0D0
+
+        call info(ENDL//"4)"//ENDL//F8_NAME)
+
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+
+        INT_N = 128
+
+        XMIN = 1.0D0
+        XMAX = INT_N
+        YMIN = -10.0D0
+        YMAX = 100.0D0
+
+        x = (/ (n, n=1, INT_N) /)
+
+        call begin_plot(fname='L5-Q4')
+
+        call subplots(2, 1)
+
+        call info(ENDL//"m0 ~ "//F8a_NAME//ENDL)
+
+        r = adapt_int(f8a, a, b, INT_N, tol=1.0D-8, kind="gauss-legendre")
+
+        call info(":: Valor de referência (Integração Adaptativa) tol = 1E-8 ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(r))
+
+        do n = 1, INT_N
+            y(:, n) = (/ &
+                num_int(f8a, a, b, n, kind="polynomial"), &
+!           
+                num_int(f8a, a, b, n, kind="gauss-legendre"), &
+!
+                num_int(f8a, a, b, n, kind="romberg"), &
+!
+                r &
+            /)
+        end do
+
+        call info(":: Integração Polinomial ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(1, 10)))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(2, 10)))
+        call info(":: Método de Romberg ::")
+        call blue("m0 = ∫Sσ(ω) dω ≈ "//DSTR(y(3, 10)))
+
+        do n = 1, 4
+            call subplot(1, 1, x, y(n, :), INT_N)
+        end do
+
+        call subplot_config(1, 1, title='m0 = ∫Sσ(ω) dω ≈ '//DSTR(r), xlabel='n', ylabel='m0', grid=.TRUE., &
+            legend=legend, with=with, xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX)
+
+        call info(ENDL//"m2 ~ "//F8b_NAME//ENDL)
+
+        r = adapt_int(f8b, a, b, INT_N, tol=1.0D-8, kind="gauss-legendre")
+
+        call info(":: Valor de referência (Integração Adaptativa) tol = 1E-8 ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(r))
+
+        do n = 1, INT_N
+            y(:, n) = (/ &
+                num_int(f8b, a, b, n, kind="polynomial"), &
+!           
+                num_int(f8b, a, b, n, kind="gauss-legendre"), &
+!
+                num_int(f8b, a, b, n, kind="romberg"), &
+!
+                r &
+            /)
+        end do
+
+        call info(":: Integração Polinomial ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(1, 10)))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(2, 10)))
+        call info(":: Método de Romberg ::")
+        call blue("m2 = ∫Sσ(ω) dω ≈ "//DSTR(y(3, 10)))
+
+        do n = 1, 4
+            call subplot(2, 1, x, y(n, :), INT_N)
+        end do
+
+        call subplot_config(2, 1, title='m2 = ∫ω² Sσ(ω) dω ≈ '//DSTR(r), xlabel='n', ylabel='m2', grid=.TRUE., &
+            legend=legend, with=with, xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX)
+
+        call render_plot(clean=.TRUE.)
+    end subroutine
+
+    subroutine Q5
+        implicit none
+        integer :: n
+        double precision :: a, b, s
+
+        call info(ENDL//"5) "//F9_NAME)
+        a = 0.0D0
+        b = 4.0D0
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        
+        n = 4
+        call info(":: Integração Polinomial ::")
+        call blue('n = '//STR(n))
+        s = num_int(f9, a, b, n, kind="polynomial")
+        call blue("A = ∫f(x) dx ≈ "//DSTR(s))
+
+        n = 2
+        call info(":: Quadratura de Gauss-Legendre ::")
+        call blue('n = '//STR(n))
+        s = num_int(f9, a, b, n, kind="gauss-legendre")
+        call blue("A = ∫f(x) dx ≈ "//DSTR(s))
+    end subroutine
+
+    subroutine Q6
+        implicit none
+        integer :: n
+        double precision :: a, b, s
+
+        n = 10
+
+        call blue('n = '//STR(n))
+
+        call info(ENDL//"6) "//F10_NAME)
+        a = 0.0D0
+        b = 3.0D0
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        call info(":: Integração Polinomial ::")
+        s = num_int(f10, a, b, n, kind="polynomial")
+        call blue("A = ∫f(x) dx ≈ "//DSTR(s))
+        call info(":: Quadratura de Gauss-Legendre ::")
+        s = num_int(f10, a, b, n, kind="gauss-legendre")
+        call blue("A = ∫f(x) dx ≈ "//DSTR(s))    
+        call info(":: Método de Romberg ::")
+        s = num_int(f10, a, b, n, kind="romberg")
+        call blue("A = ∫f(x) dx ≈ "//DSTR(s))     
+    end subroutine
+
+    subroutine Q7
+        implicit none
+        integer :: n
+        double precision :: a, b, r, s
+
+        call info(ENDL//"7)")
+
+        n = 10
+
+        call blue('n = '//STR(n))
+
+        call info("A1 ~ "//F11_NAME)
+        a = DNINF
+        b = 1.0D0
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        call info(":: Quadratura de Gauss-Hermite e de Gauss-Legendre ::")
+        r = num_int(f11a, a, -a, n, kind="gauss-hermite")
+        s = num_int(f11b, -b, b, n, kind="gauss-legendre")
+        call blue("A1 = ∫f(x) dx ≈ "//DSTR(r+s))
+    
+        call info("A2 ~ "//F12_NAME)
+        a = DNINF
+        b = DINF
+        call info("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+        call info(":: Quadratura de Gauss-Hermite ::")
+        s = num_int(f12, a, b, n, kind="gauss-hermite")
+        call blue("A2 = ∫f(x) dx ≈ "//DSTR(s))
+    end subroutine
+
+    subroutine QE1
+        implicit none
+        double precision :: x, y, dy
+
+        x = 3.0D0
+
+        call info(ENDL//'1)')
+
+        call info(FL5_QE1_NAME)
+        call info(DFL5_QE1_NAME)
+
+        call info(':: Derivada Analítica ::')
+        dy = DFL5_QE1(x)
+        call blue("f'("//DSTR(x)//") = "//DSTR(dy))
+
+        call info(":: Diferenças Finitas ::"//ENDL)
+
+        call info(':: Diferença Central (Δx = 1E-2)::')
+        y = d(FL5_QE1, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2)::')
+        y = d(FL5_QE1, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2)::')
+        y = d(FL5_QE1, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(ENDL//":: Extrapolação de Richard ::")
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, p=2.0D0, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, p=2.0D0, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE1, x, dx=1.0D-2, p=2.0D0, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+    end subroutine
+
+    subroutine QE2
+        implicit none
+        double precision :: x, y, dy
+
+        x = 2.0D0
+
+        call info(ENDL//'2)')
+
+        call info(FL5_QE2_NAME)
+        call info(DFL5_QE2_NAME)
+
+        call info(':: Derivada Analítica ::')
+        dy = DFL5_QE2(x)
+        call blue("f'("//DSTR(x)//") = "//DSTR(dy))
+
+        call info(":: Diferenças Finitas ::"//ENDL)
+
+        call info(':: Diferença Central (Δx = 1E-2)::')
+        y = d(FL5_QE2, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2)::')
+        y = d(FL5_QE2, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2)::')
+        y = d(FL5_QE2, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(ENDL//":: Extrapolação de Richard ::")
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, p=2.0D0, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, p=2.0D0, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE2, x, dx=1.0D-2, p=2.0D0, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+    end subroutine
+
+    subroutine QE3
+        implicit none
+        double precision :: x, y, dy
+
+        x = 6.0D0
+
+        call info(ENDL//'3)')
+
+        call info(FL5_QE3_NAME)
+        call info(DFL5_QE3_NAME)
+
+        call info(':: Derivada Analítica ::')
+        dy = DFL5_QE3(x)
+        call blue("f'("//DSTR(x)//") = "//DSTR(dy))
+
+        call info(":: Diferenças Finitas ::"//ENDL)
+
+        call info(':: Diferença Central (Δx = 1E-2)::')
+        y = d(FL5_QE3, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2)::')
+        y = d(FL5_QE3, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2)::')
+        y = d(FL5_QE3, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(ENDL//":: Extrapolação de Richard ::")
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Diferença Central (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, p=2.0D0, kind='central')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo à frente (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, p=2.0D0, kind='forward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 1)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+
+        call info(':: Passo atrás (Δx = 1E-2, p = 2)::')
+        y = richard(FL5_QE3, x, dx=1.0D-2, p=2.0D0, kind='backward')
+        call blue("f'("//DSTR(x)//") ≈ "//DSTR(dy))
+        call blue("|δy| = "//DSTR(DABS(y - dy)))
+    end subroutine
 end program main5

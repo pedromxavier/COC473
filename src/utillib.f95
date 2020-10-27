@@ -10,6 +10,7 @@
         double precision :: PI = 4.0D0 * DATAN(1.0D0)
 
         logical :: DEBUG_MODE = .FALSE.
+        logical :: QUIET_MODE = .FALSE.
 
         type StringArray
             character (:), allocatable :: str
@@ -70,7 +71,7 @@
             double precision :: x
             x = n
             x = DLOG2(x)
-            k = x
+            k = FLOOR(x)
             return
         end function
 
@@ -108,27 +109,67 @@
             return
         end function
 
-        function DSTR(x) result (t)
+        function DSTR(x) result (q)
+            integer :: j, k
             double precision, intent(in) :: x
-            character(len=128) :: s
-            character(len=:), allocatable :: t
+            character(len=64) :: s
+            character(len=:), allocatable :: p, q
+            
+            if (ISNAN(x)) then
+                q = '?'
+                return
+            else if (x == DINF) then
+                q = '∞'
+                return
+            else if (x == DNINF) then
+                q = '-∞'
+                return
+            end if
+
             write(s, *) x
-            t = TRIM(ADJUSTL(s))
+            p = TRIM(ADJUSTL(s))
+            do j=LEN(p), 1, -1
+                if (p(j:j) == '0') then
+                    continue
+                else if (p(j:j) == '.') then
+                    k = j - 1
+                    exit
+                else 
+                    k = j
+                    exit
+                end if
+            end do
+            q = p(:k)
             return
         end function
+
+        subroutine display(text, ansi_code)
+            implicit none
+            character(len=*) :: text
+            character(len=*), optional :: ansi_code
+            if (QUIET_MODE) then
+                return
+            else
+                if (PRESENT(ansi_code)) then
+                    write (*, *) ''//achar(27)//'['//ansi_code//'m'//text//''//achar(27)//'[0m'
+                else
+                    write (*, *) text
+                end if
+            end if
+        end subroutine
 
         subroutine error(text)
 !           Red Text
             implicit none
             character(len=*) :: text
-            write (*, *) ''//achar(27)//'[31m'//text//''//achar(27)//'[0m'
+            call display(text, '31')
         end subroutine
 
         subroutine warn(text)
 !           Yellow Text
             implicit none
             character(len=*) :: text
-            write (*, *) ''//achar(27)//'[93m'//text//''//achar(27)//'[0m'
+            call display(text, '93')
         end subroutine
 
         subroutine debug(text)
@@ -136,7 +177,7 @@
             implicit none
             character(len=*) :: text
             if (DEBUG_MODE) then
-                write (*, *) 'DEBUG: '//achar(27)//'[93m'//text//''//achar(27)//'[0m'
+                call display('[DEBUG] '//text, '93')
             end if
         end subroutine
 
@@ -144,18 +185,22 @@
 !           Green Text
             implicit none
             character(len=*) :: text
-            write (*, *) ''//achar(27)//'[32m'//text//''//achar(27)//'[0m'
+            call display(text, '32')
         end subroutine
 
-        subroutine show(var, value)
+        subroutine blue(text)
+!           Blue Text
+            implicit none
+            character(len=*) :: text
+            call display(text, '36')
+        end subroutine
+
+        subroutine show(var, val)
 !           Violet Text
             implicit none
             character(len=*) :: var
-            character(len=24) :: val
-            double precision :: value
-10          format(F24.16, '')
-            write (val, 10) value
-            write (*, *) ''//achar(27)//'[36m'//var//' = '//val//''//achar(27)//'[0m'
+            double precision :: val
+            write (*, *) ''//achar(27)//'[36m'//var//' = '//DSTR(val)//''//achar(27)//'[0m'
         end subroutine
 
         recursive subroutine cross_quick_sort(x, y, u, v, n)
@@ -209,7 +254,7 @@
             integer :: k, n
             double precision, intent(in) :: a, b, dt
             double precision, dimension(:), allocatable :: t
-            n = 1 + (b - a) / dt
+            n = 1 + FLOOR((b - a) / dt)
             allocate(t(n))
             t(:) = dt * (/ (k, k=0, n-1) /)
         end subroutine

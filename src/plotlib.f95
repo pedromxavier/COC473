@@ -2,8 +2,8 @@ module PlotLib
     use Util
     implicit none
     character(len=*), parameter :: DEFAULT_FNAME = 'plotfile'
-    character(len=*), parameter :: DEFAULT_SIZE_W = '8in'
-    character(len=*), parameter :: DEFAULT_SIZE_H = '6in'
+    character(len=*), parameter :: DEFAULT_SIZE_W = '12in'
+    character(len=*), parameter :: DEFAULT_SIZE_H = '9in'
     character(len=*), parameter :: PLOT_ENDL = ',\'//ENDL
 
     logical :: g_INPLOT = .FALSE.
@@ -18,8 +18,15 @@ module PlotLib
         integer :: n = 0
         logical :: grid = .FALSE.
         logical :: done = .FALSE.
+    
         character(len=:), allocatable :: title, xlabel, ylabel
-        type(StringArray), dimension(:), allocatable :: legend, with
+        type(StringArray), dimension(:), allocatable :: legend
+        type(StringArray), dimension(:), allocatable :: with
+
+!       Plot boundaries
+        logical :: l_xmin = .FALSE., l_xmax = .FALSE.
+        logical :: l_ymin = .FALSE., l_ymax = .FALSE.
+        double precision :: xmin, xmax, ymin, ymax
     end type
 
     type(SPLOT), dimension(:, :), allocatable :: g_SUBPLOTS
@@ -91,13 +98,15 @@ module PlotLib
         cmd = 'gnuplot -p '//PLOT_FNAME(fname)
     end function
     
-    subroutine subplot_config(i, j, title, xlabel, ylabel, legend, with, grid)
+    subroutine subplot_config(i, j, title, xlabel, ylabel, xmin, xmax, ymin, ymax, legend, with, grid)
         integer, intent(in) :: i, j
         integer :: k, n
 
         logical, optional :: grid
 
         character(len=*), optional :: title, ylabel, xlabel
+
+        double precision, optional :: xmin, xmax, ymin, ymax
 
         type(StringArray), dimension(:), optional :: legend, with
 
@@ -111,13 +120,33 @@ module PlotLib
         allocate(g_SUBPLOTS(i, j)%legend(n))
         allocate(g_SUBPLOTS(i, j)%with(n))
 
+        if (PRESENT(xmin)) then
+            g_SUBPLOTS(i, j)%xmin = xmin
+            g_SUBPLOTS(i, j)%l_xmin = .TRUE.
+        end if
+
+        if (PRESENT(xmax)) then
+            g_SUBPLOTS(i, j)%xmax = xmax
+            g_SUBPLOTS(i, j)%l_xmax = .TRUE.
+        end if
+
+        if (PRESENT(ymin)) then
+            g_SUBPLOTS(i, j)%ymin = ymin
+            g_SUBPLOTS(i, j)%l_ymin = .TRUE.
+        end if
+
+        if (PRESENT(ymax)) then
+            g_SUBPLOTS(i, j)%ymax = ymax
+            g_SUBPLOTS(i, j)%l_ymax = .TRUE.
+        end if
+
         if (.NOT. PRESENT(legend)) then
             do k=1,n
                 g_SUBPLOTS(i, j)%legend(k)%str = 't '//quote(STR(i))
             end do
         else
             do k=1,n
-                g_SUBPLOTS(i, j)%legend(k)%str = 't '//quote(legend(i)%str)
+                g_SUBPLOTS(i, j)%legend(k)%str = 't '//quote(legend(k)%str)
             end do
         end if
 
@@ -176,13 +205,20 @@ module PlotLib
 
         s_data_fname = DATA_FNAME(g_FNAME, i, j, g_SUBPLOTS(i, j)%n)
 
+!       =================== Touch Plot File ===================================        
+        open(newunit=file, file=s_data_fname, status="replace", action="write")
+            write(file, *) "# file: "//s_data_fname
+        close(file)
+!       =======================================================================        
+
 !       ==================== Write to Plot File ==============================================
 10      format(F16.8, ' ')
-        open(newunit=file, file=s_data_fname, status="new", position="append", action="write")
+11      format(F16.8, ' ')
+        open(newunit=file, file=s_data_fname, status="old", position="append", action="write")
         write(file, *)
         do k=1, n
             write(file, 10, advance='no') x(k)
-            write(file, *) y(k)
+            write(file, 11, advance='yes') y(k)
         end do
         close(file)
 !       ======================================================================================
@@ -251,8 +287,17 @@ module PlotLib
 !       ==============================
     end subroutine
 
-    subroutine render_plot()
+    subroutine render_plot(clean)
         integer :: file, i, j, k, m, n
+
+        logical, optional :: clean
+        logical :: t_clean
+
+        if (.NOT. PRESENT(clean)) then
+            t_clean = .FALSE.
+        else
+            t_clean = clean
+        end if
 
 !       === Check Plot =========
         if (.NOT. g_INPLOT) then
@@ -281,6 +326,30 @@ module PlotLib
                 write(file, *) 'set title '//quote(g_SUBPLOTS(i, j)%title)//';'
                 write(file, *) 'set xlabel '//quote(g_SUBPLOTS(i, j)%xlabel)//';'
                 write(file, *) 'set ylabel '//quote(g_SUBPLOTS(i, j)%ylabel)//';'
+
+!               ============= Set XRANGE ======================================                
+                if (g_SUBPLOTS(i, j)%l_xmin .AND. g_SUBPLOTS(i, j)%l_xmax) then
+                    write(file, *) 'set xrange ['//DSTR(g_SUBPLOTS(i, j)%xmin)//':'//DSTR(g_SUBPLOTS(i, j)%xmax)//'];'
+                else if (g_SUBPLOTS(i, j)%l_xmin) then
+                    write(file, *) 'set xrange ['//DSTR(g_SUBPLOTS(i, j)%xmin)//':*];'
+                else if (g_SUBPLOTS(i, j)%l_xmax) then
+                    write(file, *) 'set xrange [*:'//DSTR(g_SUBPLOTS(i, j)%xmax)//'];'
+                else
+                    write(file, *) 'set xrange [*:*];'
+                end if
+!               ===============================================================
+                
+!               ============= Set YRANGE ======================================                
+                if (g_SUBPLOTS(i, j)%l_ymin .AND. g_SUBPLOTS(i, j)%l_ymax) then
+                    write(file, *) 'set yrange ['//DSTR(g_SUBPLOTS(i, j)%ymin)//':'//DSTR(g_SUBPLOTS(i, j)%ymax)//'];'
+                else if (g_SUBPLOTS(i, j)%l_ymin) then
+                    write(file, *) 'set yrange ['//DSTR(g_SUBPLOTS(i, j)%ymin)//':*];'
+                else if (g_SUBPLOTS(i, j)%l_ymax) then
+                    write(file, *) 'set yrange [*:'//DSTR(g_SUBPLOTS(i, j)%ymax)//'];'
+                else
+                    write(file, *) 'set yrange [*:*];'
+                end if
+!               ===============================================================
 
                 if (g_SUBPLOTS(i, j)%grid) then
                     write(file, *) 'set grid;'
@@ -315,11 +384,13 @@ module PlotLib
         close(file)
 !       ======================================================================================
 
-!       ===== Call GNUPLOT and remove temporary files =======
+!       ===== Call GNUPLOT and remove temporary files ===========
         call EXECUTE_COMMAND_LINE(GNU_PLOT_CMD(g_FNAME))
 
-        call EXECUTE_COMMAND_LINE(REMOVE_TEMP_FILES(g_FNAME))
-!       =====================================================
+        if (t_clean) then 
+            call EXECUTE_COMMAND_LINE(REMOVE_TEMP_FILES(g_FNAME))
+        end if
+!       =========================================================
 
 !       ========= Free Variables ======================
         deallocate(g_FNAME, g_OUTP_FNAME, g_PLOT_FNAME)

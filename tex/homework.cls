@@ -21,34 +21,34 @@
 \RequirePackage{ifthen}
 \RequirePackage{xifthen}
 \RequirePackage{geometry}
+\RequirePackage{changepage}
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
 %% Pgf - Tikz
-\RequirePackage{tikz}
-\RequirePackage{pgfplots}
-\usetikzlibrary{graphdrawing, graphs, graphs.standard, quotes, arrows.meta}
-\usegdlibrary{force, trees}
-
-\newcommand{\vertex}{\node[vertex]}
-
-\newcommand{\cqd}{%%
-	\ensuremath{\blacksquare}
-}
-
-\newcommand{\gvertex}[4][]{%%
-	\node (#2) at (#3, #4) {};
-	\draw [#1] (#2) circle [radius=2pt];
-}
-
-\newcommand{\lvertex}[5][]{%%
-	\node (#2) at (#3, #4) {#5};
-	\draw [#1] (#2) circle [radius=2pt];
-}
-
-\newcommand{\glink}[3][gray!30]{%%
-	\draw [#1] (#2) -- (#3);
-}
+%\RequirePackage{tikz}
+%\RequirePackage{pgfplots}
+%\usetikzlibrary{graphdrawing, graphs, graphs.standard, quotes, arrows.meta}
+%
+%\newcommand{\vertex}{\node[vertex]}
+%
+%\newcommand{\cqd}{%%
+%	\ensuremath{\blacksquare}
+%}
+%
+%\newcommand{\gvertex}[4][]{%%
+%	\node (#2) at (#3, #4) {};
+%	\draw [#1] (#2) circle [radius=2pt];
+%}
+%
+%\newcommand{\lvertex}[5][]{%%
+%	\node (#2) at (#3, #4) {#5};
+%	\draw [#1] (#2) circle [radius=2pt];
+%}
+%
+%\newcommand{\glink}[3][gray!30]{%%
+%	\draw [#1] (#2) -- (#3);
+%}
 
 \setlength{\parindent}{0em}
 \setlength{\parskip}{1em}
@@ -102,6 +102,53 @@
 
 \newcounter{algors}
 \setcounter{algors}{0}
+
+\lstdefinestyle{blankstyle}
+{
+	numberblanklines=true,
+	tabsize=4,
+	gobble=0,
+	frame=single,
+	showstringspaces=false,
+	mathescape=true,
+	breaklines=true,
+	basicstyle=\small,
+	breakatwhitespace=false,
+	extendedchars=true,
+	inputencoding=utf8,
+	literate=
+	{ã}{{\~a}}1                         {õ}{{\~o}}1 
+	{Ã}{{\~A}}1                         {Õ}{{\~O}}1 
+	{á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+	{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+	{à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+	{À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+	{ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+	{Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+	{â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+	{Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+	{œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+	{ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+	{€}{{\EUR}}1 {£}{{\pounds}}1
+	{~}{{{\raisebox{0.5ex}{\texttildelow}}}}1
+	{^}{{{\raisebox{-0.5ex}{\textasciicircum}}}}1
+	{√}{{{\raisebox{0.5ex}{$\sqrt{}$}}}}1
+	{≈}{{$\approx$}}1
+	{∫}{{$\int$}}1
+	{∞}{{$\infty$}}1
+	{ω}{{$\omega$}}1
+	{σ}{{$\sigma$}}1
+	{δ}{{$\delta$}}1
+	{Δ}{{$\Delta$}}1
+	{π}{{$\pi$}}1
+	{θ}{{$\theta$}}1
+	{η}{{$\eta$}}1
+	{ξ}{{$\xi$}}1	
+	{²}{{$^2$}}1
+	{³}{{$^3$}}1
+	{⁴}{{$^4$}}1
+	{⁵}{{$^5$}}1
+}
 
 \lstdefinestyle{algorstyle}
 {
@@ -182,25 +229,25 @@
 \newcommand{\case}[2]{#1 #2} % Dummy, so \renewcommand has something to overwrite...
 \newenvironment{switch}[1]{\renewcommand{\case}{\ifequals{#1}}}{}
 
-%% Wallpaper
-\newcommand{\wallpaper}[1]{%%
-	\tikz[remember picture,overlay] \node[opacity=0.75,inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth,height=\paperheight]{#1}};
-}
-
-%% Centered maketitle
-\newcommand{\cmaketitle}[1]{%%
-	\topskip0pt
-	\vspace*{\fill}
-	\begin{center}
-		{\Huge\bfseries \@title\space} \\ \vspace{30pt}
-		{\huge \@author} \\ \vspace{5pt}
-		{\ttfamily\Large \@register\space} \\ \vspace{20pt}
-		{\Large \@date \space}
-	\end{center}
-	\vspace*{\fill}
-	\wallpaper{#1}
-	\pagebreak
-}
+%%% Wallpaper
+%\newcommand{\wallpaper}[1]{%%
+%	\tikz[remember picture,overlay] \node[opacity=0.75,inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth,height=\paperheight]{#1}};
+%}
+%
+%%% Centered maketitle
+%\newcommand{\cmaketitle}[1]{%%
+%	\topskip0pt
+%	\vspace*{\fill}
+%	\begin{center}
+%		{\Huge\bfseries \@title\space} \\ \vspace{30pt}
+%		{\huge \@author} \\ \vspace{5pt}
+%		{\ttfamily\Large \@register\space} \\ \vspace{20pt}
+%		{\Large \@date \space}
+%	\end{center}
+%	\vspace*{\fill}
+%	\wallpaper{#1}
+%	\pagebreak
+%}
 
 %% Fortran
 \lstdefinestyle{fortranstyle}
@@ -244,6 +291,22 @@
 	%%
 	{~}{{{\raisebox{0.5ex}{\texttildelow}}}}1
 	{^}{{{\raisebox{-0.5ex}{\textasciicircum}}}}1
+	{√}{{{\raisebox{0.5ex}{$\sqrt{}$}}}}1
+	{≈}{{$\approx$}}1
+	{∫}{{$\int$}}1
+	{∞}{{$\infty$}}1
+	{ω}{{$\omega$}}1
+	{σ}{{$\sigma$}}1
+	{δ}{{$\delta$}}1
+	{Δ}{{$\Delta$}}1
+	{π}{{$\pi$}}1
+	{θ}{{$\theta$}}1
+	{η}{{$\eta$}}1
+	{ξ}{{$\xi$}}1
+	{²}{{$^2$}}1
+	{³}{{$^3$}}1
+	{⁴}{{$^4$}}1
+	{⁵}{{$^5$}}1
 }
 
 \lstnewenvironment{fortran}[1][\empty]{%%

@@ -2,25 +2,13 @@ program main6
     use Func
     use Calc
     use Util
-    use Plot
+    use Plotlib
     implicit none
-
-    integer :: i, j
-
-    integer :: n = 10
-    double precision :: a, b, y0, dt
-
-    double precision, dimension(:), allocatable :: t, y
-    double precision, dimension(:, :), allocatable :: P
-
-    type(StringArray), dimension(:), allocatable :: legend
-
-    character(len=32) :: n_chr
 
 !   Command-line Args
     integer :: argc
 
-!    ENABLE_DEBUG = .TRUE.
+    DEBUG_MODE = .TRUE.
 
 !   Random seed definition
     call init_random_seed()
@@ -29,91 +17,266 @@ program main6
     argc = iargc()
 
     if (argc == 0) then
-        goto 099
-    else if (argc == 1) then
-        call getarg(1, n_chr)
-        read (unit=n_chr, fmt=*) n
-        goto 099
+        goto 100
     else
-        goto 101
+        goto 11
     end if
 
 !   ====== Begin =====================================    
-099 call info("Nº de pontos de integração: "//STR(n))
-    goto 200
 
 !   ====== Success ===================================
-100 call info(':: Sucesso ::')
+10  call info(':: Sucesso ::')
     goto 1
 !   ====== Errors ====================================
-101 call error('Este programa não aceita mais do que um parâmetro (número de pontos de integração).')
+11  call error('Este programa não aceita parâmetros.')
     goto 1
 !   ====== Finish ====================================
 1   stop
-!   ==================================================
+!   ====== Program ===================================
+100 call Q1
+    goto 200
 
-!   ===============================
-201 i = i + 1
-    go to(210, 220, 230, 299), i
-!   ===============================
-301 i = i + 1
-    go to(310, 400), i
-!   ===============================
-400 call info(ENDL//"3) "//F78_NAME)
-    i = 0
-    goto 401
-
-401 i = i + 1
-    go to(410, 500), i
-!   ===============================   
-500 goto 100
-
-200 call info(ENDL//"1) "//F13_NAME)
-    i = 0
-    call linspace(F13_A, F13_B, F13_DT, n, t)
-    allocate(P(n, 4))
-    allocate(y(n))
-    allocate(legend(4))
-    call show('dt', dt)
-    goto 201
-
-210 call info(":: Método de Euler ::")
-    y(:) = euler(df13, y0, t, n)
-    P(:, 1) = y(:)
-    legend(1)%str = "Euler"
-    goto 201
-
-220 call info(":: Método de Runge-Kutta de 2ª ordem ::")
-    y(:) = runge_kutta2(df13, y0, t, n)
-    P(:, 2) = y(:)
-    legend(2)%str = "Runge-Kutta II"
-    goto 201
-
-230 call info(":: Método de Runge-Kutta de 4ª ordem ::")
-    y(:) = runge_kutta4(df13, y0, t, n)
-    P(:, 3) = y(:)
-    legend(3)%str = "Runge-Kutta IV"
-    goto 201
-
-299 call info(":: Plot 1 ::")
-    P(:, 4) = (/ (f13(t(j)), j=1, n) /)
-    legend(4)%str = "y(t)"
-    call xy_multiplot(t, P, n, 4, fname='ex1', title="y'(t) = -2 t (y)²; y(0) = 1", xlabel='t', ylabel='y(t)', legend=legend)
-    deallocate(P)
-    deallocate(t)
-    deallocate(y)
-    deallocate(legend)
+200 call Q2
     goto 300
 
-300 call info(ENDL//"2) "//F14_NAME)
-    i = 0
-    goto 301
-
-310 goto 301
-
-399 call info(":: Plot 2 ::")
-
+300 call Q3
     goto 400
 
-410 goto 401
+400 call QB
+    goto 10
+
+    contains
+        subroutine Q1
+            implicit none
+            integer :: n, i, j
+            integer :: k = 0
+            double precision, dimension(:), allocatable :: t, y
+            double precision, dimension(4) :: dt
+            type(StringArray), dimension(:), allocatable :: legend
+            type(StringArray), dimension(:), allocatable :: title
+
+            allocate(legend(4), title(4))
+
+            dt(1) = 5.0D-1
+            dt(2) = 2.5D-1
+            dt(3) = 1.0D-1
+            dt(4) = 0.1D-1
+
+            title(1)%str = "Δt = 0.50"
+            title(2)%str = "Δt = 0.25"
+            title(3)%str = "Δt = 0.10"
+            title(4)%str = "Δt = 0.01"
+
+            legend(1)%str = "Euler"
+            legend(2)%str = "Runge-Kutta II"
+            legend(3)%str = "Runge-Kutta IV"
+            legend(4)%str = "y(t)"
+
+            call blue(ENDL//"1)"//ENDL//F13_NAME)
+
+            call info(":: Plotagem ::")
+
+            call begin_plot(fname='L6-Q1', size_w='12in', size_h='9in')
+            call subplots(2, 2)
+
+            do i=1,2
+                do j=1,2
+                    k = k + 1
+
+                    call linspace(F13_A, F13_B, dt(k), n, t)
+
+                    allocate(y(n))
+
+                    !call info(":: Método de Euler ::")
+                    y = ode_solve(df13, F13_Y0, t, n, kind='euler')
+                    call subplot(i, j, t, y, n)
+
+                    !call info(":: Método de Runge-Kutta de 2ª ordem ::")
+                    y = ode_solve(df13, F13_Y0, t, n, kind='runge-kutta2')
+                    call subplot(i, j, t, y, n)
+
+                    !call info(":: Método de Runge-Kutta de 4ª ordem ::")
+                    y = ode_solve(df13, F13_Y0, t, n, kind='runge-kutta4')
+                    call subplot(i, j, t, y, n)
+
+                    y = (/ (f13(t(j)), j=1, n) /)
+                    call subplot(i, j, t, y, n)
+
+                    call subplot_config(i, j, &
+                    title=title(k)%str, xlabel='t', ylabel='y(t)', grid=.TRUE., legend=legend)
+
+                    deallocate(t, y)
+                end do
+            end do
+
+            call render_plot(clean=.TRUE.)
+
+            deallocate(legend, title)
+        end subroutine
+
+        subroutine Q2
+            integer :: n, i, j
+            integer :: k = 0
+            double precision, dimension(:), allocatable :: t, y
+            double precision, dimension(4) :: dt
+            type(StringArray), dimension(:), allocatable :: legend
+            type(StringArray), dimension(:), allocatable :: title
+
+            allocate(legend(2), title(4))
+
+            dt(1) = 5.0D-1
+            dt(2) = 2.5D-1
+            dt(3) = 1.0D-1
+            dt(4) = 0.1D-1
+
+            title(1)%str = "Δt = 0.50"
+            title(2)%str = "Δt = 0.25"
+            title(3)%str = "Δt = 0.10"
+            title(4)%str = "Δt = 0.01"
+
+            legend(1)%str = "Série de Taylor"
+            legend(2)%str = "Runge-Kutta-Nystrom"
+
+            call blue(ENDL//"2)"//ENDL//F14_NAME)
+
+            call info(":: Plotagem ::")
+
+            call begin_plot(fname='L6-Q2', size_w='12in', size_h='9in')
+            call subplots(2, 2)
+
+            do i=1,2
+                do j=1,2
+                    k = k + 1
+
+                    call linspace(F14_A, F14_B, dt(k), n, t)
+
+                    allocate(y(n))
+
+                    y = ode2_solve(d2f14, F14_Y0, F14_DY0, t, n, kind='taylor')
+                    call subplot(i, j, t, y, n)
+
+                    y = ode2_solve(d2f14, F14_Y0, F14_DY0, t, n, kind='runge-kutta-nystrom')
+                    call subplot(i, j, t, y, n)
+
+                    call subplot_config(i, j, &
+                    title=title(k)%str, xlabel='t', ylabel='y(t)', grid=.TRUE., legend=legend)
+
+                    deallocate(t, y)
+                end do
+            end do
+
+            call render_plot(clean=.TRUE.)
+
+            deallocate(legend, title)
+        end subroutine
+
+        subroutine Q3
+            integer :: n, i, j
+            integer :: k = 0
+            double precision, dimension(:), allocatable :: t, y
+            double precision, dimension(4) :: dt
+            type(StringArray), dimension(:), allocatable :: legend
+            type(StringArray), dimension(:), allocatable :: title
+
+            allocate(legend(2), title(4))
+
+            dt(1) = 5.0D-1
+            dt(2) = 4.0D-1
+            dt(3) = 3.0D-1
+            dt(4) = 2.0D-1
+
+            title(1)%str = "Δt = 0.50"
+            title(2)%str = "Δt = 0.40"
+            title(3)%str = "Δt = 0.30"
+            title(4)%str = "Δt = 0.20"
+
+            legend(1)%str = "Série de Taylor"
+            legend(2)%str = "Runge-Kutta-Nystrom"
+
+            call blue(ENDL//"3)"//ENDL//F15_NAME)
+
+            call begin_plot(fname='L6-Q3', size_w='12in', size_h='9in')
+            call subplots(2, 2)
+
+            do i=1,2
+                do j=1,2
+                    k = k + 1
+
+                    call linspace(F15_A, F15_B, dt(k), n, t)
+
+                    allocate(y(n))
+
+                    y = ode2_solve(d2f15, F15_Y0, F15_DY0, t, n, kind='taylor')
+                    call subplot(i, j, t, y, n)
+
+                    y = ode2_solve(d2f15, F15_Y0, F15_DY0, t, n, kind='runge-kutta-nystrom')
+                    call subplot(i, j, t, y, n)
+
+                    call subplot_config(i, j, &
+                    title=title(k)%str, xlabel='t', ylabel='z(t)', grid=.TRUE., legend=legend)
+
+                    deallocate(t, y)
+                end do
+            end do
+
+            call render_plot(clean=.TRUE.)
+
+            deallocate(legend, title)
+        end subroutine
+
+        subroutine QB
+            integer :: n, i, j
+            integer :: k = 0
+            double precision, dimension(:), allocatable :: t, y
+            double precision, dimension(4) :: dt
+            type(StringArray), dimension(:), allocatable :: legend
+            type(StringArray), dimension(:), allocatable :: title
+
+            allocate(legend(2), title(4))
+
+            dt(1) = 5.0D-1
+            dt(2) = 2.5D-1
+            dt(3) = 1.0D-1
+            dt(4) = 0.1D-1
+
+            title(1)%str = "Δt = 0.50"
+            title(2)%str = "Δt = 0.25"
+            title(3)%str = "Δt = 0.10"
+            title(4)%str = "Δt = 0.01"
+
+            legend(1)%str = "Série de Taylor"
+            legend(2)%str = "Runge-Kutta-Nystrom"
+
+            call blue(ENDL//"Bônus)"//ENDL//F15_NAME)
+
+            call info(":: Plotagem ::")
+
+            call begin_plot(fname='L6-QB', size_w='12in', size_h='9in')
+            call subplots(2, 2)
+
+            do i=1,2
+                do j=1,2
+                    k = k + 1
+
+                    call linspace(F15_A, F15_B, dt(k), n, t)
+
+                    allocate(y(n))
+
+                    y = ode2_solve(d2f15, F15_BY0, F15_DY0, t, n, kind='taylor')
+                    call subplot(i, j, t, y, n)
+
+                    y = ode2_solve(d2f15, F15_BY0, F15_DY0, t, n, kind='runge-kutta-nystrom')
+                    call subplot(i, j, t, y, n)
+
+                    call subplot_config(i, j, &
+                    title=title(k)%str, xlabel='t', ylabel='z(t)', grid=.TRUE., legend=legend)
+
+                    deallocate(t, y)
+                end do
+            end do
+
+            call render_plot(clean=.TRUE.)
+
+            deallocate(legend, title)
+        end subroutine
 end program main6

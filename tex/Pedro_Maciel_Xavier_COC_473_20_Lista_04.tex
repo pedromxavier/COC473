@@ -4,37 +4,73 @@
 \title{COC473 - Lista 4}
 \author{Pedro Maciel Xavier}
 \register{116023847}
+\notes{\textbf{Nota:} Na primeira seção da Lista estão os trechos de código dos programas pedidos. Na segunda parte, estão os resultados dos programas assim como a análise destes. Por fim, no apêndice está o código completo. Caso os gráficos estejam pequenos, você pode ampliar sem problemas pois foram renderizados diretamente no formato \texttt{.pdf}.}
+
+\newcommand{\vecx}[3]{
+	\ensuremath{\left[\begin{array}{@{}c@{}}
+			#1\\
+			#2\\
+			#2
+		\end{array}\right]}
+}
 
 \begin{document}
 	
 	\maketitle
 	
-	\quest[Bisseção]%%1
+	\section*{Programas}
+	
+	\questx[Bisseção]%%1
+	
+	\lstinputlisting[firstline=107, lastline=151, style=fortranstyle, gobble=0]{../src/calclib.f95}
 	
 	\quest[Método de \textit{Newton}]%%2
 	
 	\subquest[Original]%%a
 	
+	\lstinputlisting[firstline=153, lastline=201, style=fortranstyle, gobble=0]{../src/calclib.f95}
+	
 	\subquest[Secante]%%a
+	
+	\lstinputlisting[firstline=203, lastline=252, style=fortranstyle, gobble=0]{../src/calclib.f95}
 
 	\quest[Método de Interpolação Inversa]%%4
 	
+	\lstinputlisting[firstline=254, lastline=312, style=fortranstyle, gobble=0]{../src/calclib.f95}
+	
 	\quest[Sistemas de equações]%%4
 	
-		\subquest[Método de \textit{Newton}]%%a
+		\subquest[Método de \textit{Newton} (Derivadas Parciais Analíticas)]%%a
+		
+		\lstinputlisting[firstline=314, lastline=375, style=fortranstyle, gobble=0]{../src/calclib.f95}
+		
+		\subquest[Método de \textit{Newton} (Derivadas Parciais Numéricas)]%%a
+		
+		\lstinputlisting[firstline=377, lastline=439, style=fortranstyle, gobble=0]{../src/calclib.f95}
 	
 		\subquest[Método de \textit{Broyden}]%%a
+		
+		\lstinputlisting[firstline=441, lastline=497, style=fortranstyle, gobble=0]{../src/calclib.f95}
 	
 	\quest[Ajuste de curvas não-lineares]%%5
 	
+	\lstinputlisting[firstline=499, lastline=564, style=fortranstyle, gobble=0]{../src/calclib.f95}
+	
 	\setcounter{quests}{0}
 	
-	\quest[Utilizando os programas desenvolvidos encontre as raízes da seguinte equação por todos os métodos apresentados em sala de aula.
+	\newpage
+	\section*{Aplicações}
+	
+	\questx[Utilizando os programas desenvolvidos encontre as raízes da seguinte equação por todos os métodos apresentados em sala de aula.
 	$$f(x) = \log\left(\cosh\left(x \sqrt{g k}\right)\right) - 50$$
 	onde $g = 9.806$ e $k = 0.00341$.]
 	
+	\lstinputlisting[firstline=1, lastline=17, style=blankstyle]{answer/L4.txt}
+	
 	\quest[Repita o exercício anterior para a função:
 	$$f(x) = 4 \cos(x) - e^{2 x}$$]
+	
+	\lstinputlisting[firstline=19, lastline=35, style=blankstyle]{answer/L4.txt}
 	
 	\quest[Encontre uma solução para o seguinte sistema de equações não-lineares pelos métodos de \textit{Newton} e \textit{Broyden} utilizando os programas desenvolvidos.
 	\begin{align*}
@@ -42,6 +78,8 @@
 	&x^2 + y^2 + z^2 = 3\\
 	&x^3 - y + z = 1
 	\end{align*}]
+
+	\lstinputlisting[firstline=37, lastline=87, style=blankstyle]{answer/L4.txt}
 	
 	\quest[Resolva, utilizando os programas desenvolvidos, o seguinte sistema de equações não-lineares (usando os Métodos de \textit{Newton} e \textit{Broyden}):
 	{\normalsize%% 
@@ -57,8 +95,10 @@
 		\item $\theta_1 = 0.75$ e $\theta_2 = 6.5$;%%
 		\item $\theta_1 = 0.00$ e $\theta_2 = 11.667$;%%
 	\end{enumerate}}
+
+	\lstinputlisting[firstline=89, lastline=241, style=blankstyle]{answer/L4.txt}
 	
-	\quest[Utilizando o programa desenvolvido, ajuste uma função do tipo $f(x) = b_0 + b_1 x^{b_2}$ ao conjunto de dados abaixo:]
+	\quest[Utilizando o programa desenvolvido, ajuste uma função do tipo $f(x) = b_0 + b_1 x^{b_2}$ ao conjunto de dados abaixo:]%% 5
 	{\Large	\begin{center}
 		\begin{tabular}{|c|c|c|c|}
 			\hline
@@ -68,10 +108,22 @@
 			\hline
 		\end{tabular}
 	\end{center}}
+
+	
+	\lstinputlisting[firstline=243, lastline=284, style=blankstyle]{answer/L4.txt}
+
 	\pagebreak
 	\appendixpage
-	\appendix \section*{Código}
-	%%\lstinputlisting[style=fortranstyle, gobble=0]{matrixlib.f95}
+	\appendix \section*{Código - Programa Principal}
+	\lstinputlisting[style=fortranstyle, gobble=0]{../src/main4.f95}
+	\appendix \section*{Código - Definição das Funções}
+	\lstinputlisting[style=fortranstyle, gobble=0]{../src/funcmod.f95}
+	\appendix \section*{Código - Métodos Numéricos}
+	\lstinputlisting[style=fortranstyle, gobble=0]{../src/calclib.f95}
+	\appendix \section*{Código - Métodos com Matrizes}
+	\lstinputlisting[style=fortranstyle, gobble=0]{../src/matrixlib.f95}
+	\appendix \section*{Código - Biblioteca Auxiliar}
+	\lstinputlisting[style=fortranstyle, gobble=0]{../src/utillib.f95}
 %	\begin{thebibliography}{10}
 %		
 %	\end{thebibliography}

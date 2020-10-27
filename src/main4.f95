@@ -7,398 +7,396 @@ program main4
 !   Command-line Args
     integer :: argc
 
-!   character(len=32) :: 
-    integer :: i = 0, j = 0, k
-
-    logical :: ok
-
-!   R -> R
-    double precision :: x, y, a, b, x0
-    double precision, dimension(:), allocatable :: x123
-
-!   R^3 -> R^3
-    double precision, dimension(:), allocatable :: xx(:), yy(:), bb(:), xx0(:), bb0(:)
-    double precision, dimension(:, :), allocatable :: J0(:, :)
-
 !   Random seed definition
     call init_random_seed()
 
 !   Get Command-Line Args
     argc = iargc()
 
-    if (argc /= 0) then
-        goto 101
+    if (argc == 0) then
+        goto 100
     else
-        goto 200
+        goto 11
     end if
 
 !   ====== Success ===================================
-100 call info(':: Sucesso ::')
+10  call info(':: Sucesso ::')
     goto 1
 !   ====== Errors ====================================
-101 call error('Este programa não aceita parâmetros.')
+11  call error('Este programa não aceita parâmetros.')
     goto 1
 !   ====== Finish ====================================
 1   stop
 !   ==================================================
 
-200 call info(':: Zeros de funções ::')
-!   Renew go to counter
-    i = 0
-    goto 201
+100 call Q1
+    goto 200
 
-201 i = i + 1
-    call info('')
-    go to (210, 220, 300), i
+200 call Q2
+    goto 300
 
-300 call info(":: Sistemas não-lineares ::")
-!   Renew go to counter
-    i = 0
-    goto 301
+300 call Q3
+    goto 400
 
-301 i = i + 1
-    write(*, *)
-    go to (310, 320, 330, 400), i
+400 call Q4
+    goto 500
 
-400 goto 100
-!   Bissection
+500 call Q5
+    goto 10
+!   ==================================================
+    contains
 
-!   ======= Function zeros =============
-210 call info("1) "//F1_NAME)
-    call info(": Método da Bissecção :")
-!   == Bounds definition ==
-    a = -1000.0D0
-    b =  1000.0D0
-!   == Algorithm run ======
-    x = bissection(f1, a, b)
-    y = f1(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-    
-    call info(": Método de Newton (Zero de função) :")
-!   == Bounds definition ==
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-        x = newton(f1, df1, x0, ok)
+    subroutine Q1
+        implicit none
+        logical :: ok
+        integer :: k
+        double precision :: a, b, x, y, x0
+        double precision :: xx(3)
+        
+        call blue("1) "//F1_NAME)
+        call info(": Método da Bissecção :")
+    !   == Bounds definition ==
+        a = -1000.0D0
+        b =  1000.0D0
+        call blue("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+    !   == Algorithm run ======
+        x = bissection(f1, a, b)
         y = f1(x)
-    end do
-!   == Results ============
-    call show('x0', x0)    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
-    call info(": Método da Secante :")
-!   == Bounds definition ==
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-        x = secant(f1, x0, ok)
-        y = f1(x)
-    end do
-!   == Results ============
-    call show('x0', x0)    
-    call show('x', x)
-    call show('y', y)
-!   =======================
-
-    call info("Interpolação Inversa:")
-!   == Bounds definition ==
-    allocate(x123(3))
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x123 = (/ (DRAND(0.0D0, b), k=1,3)/)
-!   == Algorithm run ======
-        x = inv_interp(f1, x123, ok)
-        y = f1(x)
-    end do
-!   == Results ============
-    call show('x1', x123(1))
-    call show('x2', x123(2))
-    call show('x3', x123(3))
-    call show('x', x)
-    call show('y', y)
-!   =======================
-!   deallocate(x123)
-    goto 201
-
-220 call info("2) "//F2_NAME)
-    call info(": Método da Bissecção :")
-!   == Bounds definition ==
-    a = -1000.0D0
-    b =  1000.0D0
-!   == Algorithm run ======
-    x = bissection(f2, a, b)
-    y = f2(x)
-!   == Results ============    
-    call show('x', x)
-    call show('y', y)
-!   =======================
+    !   == Results ============    
+        call show('x', x)
+        call show('y', y)
+    !   =======================
     
-    call info(": Método de Newton (Zero de função) :")
-!   == Bounds definition ==
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-        x = newton(f2, df2, x0, ok)
+        call info(": Método de Newton (Zero de função) :")
+    !   == Bounds definition ==
+        ok = .FALSE.
+        do while(.NOT. ok)
+            x0 = DRAND(0.0D0, b)
+    !   == Algorithm run ======
+            x = newton(f1, df1, x0, ok)
+            y = f1(x)
+        end do
+    !   == Results ============
+        call show('x0', x0)    
+        call show('x', x)
+        call show('y', y)
+    !   =======================
+
+        call info(": Método da Secante :")
+    !   == Bounds definition ==
+        ok = .FALSE.
+        do while(.NOT. ok)
+            x0 = DRAND(0.0D0, b)
+    !   == Algorithm run ======
+            x = secant(f1, x0, ok)
+            y = f1(x)
+        end do
+    !   == Results ============
+        call show('x0', x0)    
+        call show('x', x)
+        call show('y', y)
+    !   =======================
+
+        call info("Interpolação Inversa:")
+    !   == Bounds definition ==
+        ok = .FALSE.
+        do while(.NOT. ok)
+            xx = (/ (DRAND(0.0D0, b), k=1,3)/)
+    !   == Algorithm run ======
+            x = inv_interp(f1, xx, ok)
+            y = f1(x)
+        end do
+    !   == Results ============
+        call blue('x1 = '//DSTR(xx(1))//'; x2 = '//DSTR(xx(2))//'; x3 = '//DSTR(xx(3))//';')
+        call show('x', x)
+        call show('y', y)
+    !   =======================
+    end subroutine
+
+    subroutine Q2
+        implicit none
+        logical :: ok
+        integer :: k
+        double precision :: a, b, x, y, x0
+        double precision :: xx(3)
+
+        call info(ENDL//"2) "//F2_NAME)
+        call info(": Método da Bissecção :")
+    !   == Bounds definition ==
+        a = -1000.0D0
+        b =  1000.0D0
+        call blue("[a, b] = ["//DSTR(a)//", "//DSTR(b)//"]")
+    !   == Algorithm run ======
+        x = bissection(f2, a, b)
         y = f2(x)
-    end do
-!   == Results ============
-    call show('x0', x0)
-    call show('x', x)
-    call show('y', y)
-!   =======================
+    !   == Results ============    
+        call show('x', x)
+        call show('y', y)
+    !   =======================
+        
+        call info(": Método de Newton (Zero de função) :")
+    !   == Bounds definition ==
+        ok = .FALSE.
+        do while(.NOT. ok)
+            x0 = DRAND(0.0D0, b)
+    !   == Algorithm run ======
+            x = newton(f2, df2, x0, ok)
+            y = f2(x)
+        end do
+    !   == Results ============
+        call show('x0', x0)
+        call show('x', x)
+        call show('y', y)
+    !   =======================
 
-    call info(": Método da Secante :")
-!   == Bounds definition ==
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x0 = DRAND(0.0D0, b)
-!   == Algorithm run ======
-        x = secant(f2, x0, ok)
-        y = f2(x)
-    end do
-!   == Results ============
-    call show('x0', x0)
-    call show('x', x)
-    call show('y', y)
-!   =======================
+        call info(": Método da Secante :")
+    !   == Bounds definition ==
+        ok = .FALSE.
+        do while(.NOT. ok)
+            x0 = DRAND(0.0D0, b)
+    !   == Algorithm run ======
+            x = secant(f2, x0, ok)
+            y = f2(x)
+        end do
+    !   == Results ============
+        call show('x0', x0)
+        call show('x', x)
+        call show('y', y)
+    !   =======================
 
-    call info("Interpolação Inversa:")
-!   == Bounds definition ==
-!   allocate(x123(3))
-    ok = .FALSE.
-    do while(.NOT. ok)
-        x123 = (/ (DRAND(0.0D0, b), k=1,3)/)
-!   == Algorithm run ======
-        x = inv_interp(f2, x123, ok)
-        y = f2(x)
-    end do
-!   == Results ============
-    call show('x1', x123(1))
-    call show('x2', x123(2))
-    call show('x3', x123(3))   
-    call show('x', x)
-    call show('y', y)
-!   =======================
-    deallocate(x123)
-    goto 201
+        call info("Interpolação Inversa:")
+    !   == Bounds definition ==
+    !   allocate(x123(3))
+        ok = .FALSE.
+        do while(.NOT. ok)
+            xx = (/ (DRAND(0.0D0, b), k=1,3)/)
+    !   == Algorithm run ======
+            x = inv_interp(f2, xx, ok)
+            y = f2(x)
+        end do
+    !   == Results ============
+        call blue('x1 = '//DSTR(xx(1))//'; x2 = '//DSTR(xx(2))//'; x3 = '//DSTR(xx(3))//';')
+        call show('x', x)
+        call show('y', y)
+    !   =======================
+    end subroutine
 
-310 call info('3) '//F3_NAME)
-    call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
-!   == Bounds definition ==
-    allocate(xx0(3))
-    allocate(xx(3))
-    allocate(yy(3))
-    ok = .FALSE.
-    do while (.NOT. ok)
-        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_newton(ff1, dff1, xx0, 3, ok)
-        yy = ff1(xx, 3)
-    end do
-!   == Results ============
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-!   deallocate(xx0)
-!   deallocate(xx)
-!   deallocate(yy)
-!   =======================
+    subroutine Q3
+        implicit none
+        logical :: ok
+        integer :: k
+        double precision, dimension(F3_N) :: x, y, x0
+        double precision, dimension(F3_N, F3_N) :: J0
+        
+        call blue(ENDL//'3) '//F3_NAME)
+        x0 = rand_vector(F3_N, 0.0D0, 1.0D0)
+        call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
+    !   == Bounds definition ==
+        do k=1, D_MAX_ITER
+    !   == Algorithm run ======
+            x = sys_newton(f3, df3, x0, F3_N, ok)
+            if (.NOT. ok) then
+                x0 = rand_vector(F3_N, 0.0D0, 1.0D0)
+            else
+                exit
+            end if
+        end do
+        if (.NOT. ok) then
+            call error('Este método não convergiu.')
+        else
+            y = f3(x, F3_N)
+        !   == Results ============    
+            call show_vector('x0', x0, F3_N)
+            call show_vector('x', x, F3_N)
+            call show_vector('y', y, F3_N)
+        !   =======================
+        end if
+        
+        call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
+    !   == Bounds definition ==
+        do k=1, D_MAX_ITER
+    !   == Algorithm run ======
+            x = sys_newton_num(f3, x0, F3_N, ok)
+            if (.NOT. ok) then
+                x0 = rand_vector(F3_N, 0.0D0, 1.0D0)
+            else
+                exit
+            end if
+        end do
+        if (.NOT. ok) then
+            call error('Este método não convergiu.')
+        else
+            y = f3(x, F3_N)
+        !   == Results ============    
+            call show_vector('x0', x0, F3_N)
+            call show_vector('x', x, F3_N)
+            call show_vector('y', y, F3_N)
+        !   =======================
+        end if
+
+        call info(": Método de Broyden :")
+    !   == Bounds definition ==
+        J0 = id_matrix(F3_N)
+        do k=1, D_MAX_ITER
+    !   == Algorithm run ======
+            x = sys_broyden(f3, x0, J0, F3_N, ok)
+            if (.NOT. ok) then
+                x0 = rand_vector(F3_N, 0.0D0, 1.0D0)
+            else
+                exit
+            end if
+        end do
+        if (.NOT. ok) then
+            call error('Este método não convergiu.')
+        else
+            y = f3(x, F3_N)
+        !   == Results ============    
+            call show_vector('x0', x0, F3_N)
+            call show_vector('x', x, F3_N)
+            call show_vector('y', y, F3_N)
+        !   =======================
+        end if
+    end subroutine
+
+    subroutine Q4
+        implicit none
+        logical :: ok
+        integer :: i, k
+        double precision, dimension(3) :: x, y, x0
+        double precision, dimension(3, 3) :: J0
+
+        call info('4) '//F4_NAME)
+
+        do i=1, F4_N
+            F4_T1 = F4_TT1(i)
+            F4_T2 = F4_TT2(i)
+
+            call show('θ1', F4_T1)
+            call show('θ2', F4_T2)
+
+            call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
+            x0 = rand_vector(F4_N, 0.0D0, 1.0D0)
+            do k=1, 5 * D_MAX_ITER
+        !   == Algorithm run ======
+                x = sys_newton(f4, df4, x0, F4_N, ok)
+                if (.NOT. ok) then
+                    x0 = rand_vector(F4_N, 0.0D0, 1.0D0)
+                else
+                    exit
+                end if
+            end do
+            if (.NOT. ok) then
+                call error('Este método não convergiu.')
+            else
+                y = f4(x, F4_N)
+            !   == Results ============    
+                call show_vector('x0', x0, F4_N)
+                call show_vector('x', x, F4_N)
+                call show_vector('y', y, F4_N)
+            !   =======================
+            end if
+            
+            call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
+            do k=1, 5 * D_MAX_ITER
+        !   == Algorithm run ======
+                x = sys_newton_num(f4, x0, F4_N, ok)
+                if (.NOT. ok) then
+                    x0 = rand_vector(F4_N, 0.0D0, 1.0D0)
+                else
+                    exit
+                end if
+            end do
+            if (.NOT. ok) then
+                call error('Este método não convergiu.')
+            else
+                y = f4(x, F4_N)
+            !   == Results ============    
+                call show_vector('x0', x0, F4_N)
+                call show_vector('x', x, F4_N)
+                call show_vector('y', y, F4_N)
+            !   =======================
+            end if
+
+            call info(": Método de Broyden :")
+            J0 = id_matrix(F4_N)
+            do k=1, 5 * D_MAX_ITER
+        !   == Algorithm run ======
+                x = sys_broyden(f4, x0, J0, F4_N, ok)
+                if (.NOT. ok) then
+                    x0 = rand_vector(F4_N, -1.0D0, 1.0D0)
+                else
+                    exit
+                end if
+            end do
+            if (.NOT. ok) then
+                call error('Este método não convergiu.')
+            else
+                y = f4(x, F4_N)
+            !   == Results ============    
+                call show_vector('x0', x0, F4_N)
+                call show_vector('x', x, F4_N)
+                call show_vector('y', y, F4_N)
+            !   =======================
+            end if
+        end do
+    end subroutine
+
+    subroutine Q5
+        implicit none
+        logical :: ok
+        integer :: k
+        double precision, dimension(3) :: x, y, b, b0
+        
+        call info("5) "//F5_NAME)
+
+    !   ===============================
+        x = (/1.0D0, 2.0D0, 3.0D0/)
+        y = (/1.0D0, 2.0D0, 9.0D0/)
+
+        b0 = rand_vector(F5_N, -1.0D0, 1.0D0)
     
-    call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
-!   == Bounds definition ==
-!   allocate(xx0(3))
-!   allocate(xx(3))
-!   allocate(yy(3))
-    ok = .FALSE.
-    do while (.NOT. ok)
-        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_newton_num(ff2, xx0, 3, ok)
-    end do
-    yy = ff2(xx, 3)
-!   == Results ============    
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-!   deallocate(xx0)
-    deallocate(xx)
-    deallocate(yy)
-!   ======================= 
+        call info(": Método não-linear de Mínimos Quadrados :")
+        do k=1, D_MAX_ITER
+    !   == Algorithm run ======
+            b = sys_least_squares(f5, df5, x, y, b0, F5_N, F5_N, ok)
+            if (.NOT. ok) then
+                b0 = rand_vector(F5_N, 0.8D0, 1.0D0)
+            else
+                exit
+            end if
+        end do
+        if (.NOT. ok) then
+            call error('Este método não convergiu.')
+        else
+            y = f5(x, b, F5_N, F5_N)
+        !   == Results ============    
+            call show_vector('b0', b0, F5_N)
+            call show_vector('b', b, F5_N)
+            call show_vector('x', x, F5_N)
+            call show_vector('y', y, F5_N)
+        !   =======================
+        end if
 
-    call info(": Método de Broyden :")
-!   == Bounds definition ==
-    allocate(J0(3, 3))
-!   allocate(xx0(3))
-!   allocate(xx(3))
-!   allocate(yy(3))
-    J0 = id_matrix(3)
-    ok = .FALSE.
-    do while (.NOT. ok)
-        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_broyden(ff2, xx0, J0, 3, ok)
-    end do
-    yy = ff2(xx, 3)
-!   == Results ============    
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-!   deallocate(J0)
-!   deallocate(xx0)
-!   deallocate(xx)
-!   deallocate(yy)
-!   =======================
-    goto 301
-
-320 call info('4) '//F4_NAME)
-    j = 0
-    goto 321
-
-321 j = j + 1
-    goto (322, 323, 324, 301), j
-
-322 t1 = 0.00D0
-    t2 = 3.00D0
-    call show('t1', t1)
-    call show('t2', t2)
-    goto 325
-
-323 t1 = 0.75D0
-    t2 = 6.50D0
-    call show('t1', t1)
-    call show('t2', t2)
-    goto 325
-
-324 t1 =  0.000D0
-    t2 = 11.667D0
-    call show('t1', t1)
-    call show('t2', t2)
-    goto 325
-
-325 call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Analíticas] :")
-!   == Bounds definition ==
-!   allocate(xx0(3))
-!   allocate(xx(3))
-!   allocate(yy(3))
-    ok = .FALSE.
-    do while(.NOT. ok)
-        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_newton(ff2, dff2, xx0, 3, ok)
-        yy = ff2(xx, 3)
-    end do
-!   == Results ============    
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-!   deallocate(xx0)
-!   deallocate(xx)
-!   deallocate(yy)
-!   =======================
-    
-    call info(": Método de Newton (Sistemas Não-Lineares) [Derivadas Parciais Numéricas] :")
-!   == Bounds definition ==
-!   allocate(xx0(3))
-!   allocate(xx(3))
-!   allocate(yy(3))
-    ok = .FALSE.
-    do while (.NOT. ok)
-        xx0 = (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_newton_num(ff2, xx0, 3, ok)
-    end do
-    yy = ff2(xx, 3)
-!   == Results ============    
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-!   deallocate(xx0)
-!   deallocate(xx)
-!   deallocate(yy)
-!   ======================= 
-
-    call info(": Método de Broyden :")
-!   == Bounds definition ==
-!   allocate(J0(3, 3))
-!   allocate(xx0(3))
-!   allocate(xx(3))
-!   allocate(yy(3))
-    J0 = id_matrix(3)
-    ok = .FALSE.
-    do while (.NOT. ok)
-        xx0 =  (/ (DRAND(0.0D0, 1.0D0), k=1,3) /)
-!   == Algorithm run ======
-        xx = sys_broyden(ff2, xx0, J0, 3, ok)
-    end do
-    yy = ff2(xx, 3)
-!   == Results ============    
-    call show_vector('x0', xx0, 3)
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-!   =======================
-    deallocate(J0)
-    deallocate(xx0)
-    deallocate(xx)
-    deallocate(yy)
-!   =======================
-    goto 321
-
-330 call info("5) "//F5_NAME)
-!   ===============
-    allocate(xx(3))
-    allocate(yy(3))
-    allocate(bb(3))
-    allocate(bb0(3))
-!   ===============================
-    xx(:) = (/1.0D0, 2.0D0, 3.0D0/)
-    yy(:) = (/1.0D0, 2.0D0, 9.0D0/)
- 
-    call info(": Método não-linear de Mínimos Quadrados :")
-
-    ok = .FALSE.
-
-    bb0(:) = (/ 0.293477D0, &
-                0.978723D0, &
-                0.842565D0 /)
-    bb(:) = sys_least_squares(ff5, dff5, xx, yy, bb0, 3, 3, ok)
-    
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-    call show_vector('b0', bb0, 3)
-    call show_vector('b', bb, 3)
-
-    call info(": Método não-linear de Mínimos Quadrados [Derivadas Numéricas]:")
-
-    ok = .FALSE.
-
-    bb0(:) = (/ 0.293477D0, &
-                0.978723D0, &
-                0.842565D0 /)
-    bb(:) = sys_least_squares_num(ff5, xx, yy, bb0, 3, 3, ok)
-
-    call show_vector('x', xx, 3)
-    call show_vector('y', yy, 3)
-    call show_vector('b0', bb0, 3)
-    call show_vector('b', bb, 3)
-!   =========================
-    deallocate(xx)
-    deallocate(yy)
-    deallocate(bb)
-    deallocate(bb0)
-!   =========================
-
-    goto 301
+        call info(": Método não-linear de Mínimos Quadrados [Derivadas Numéricas]:")
+        do k=1, D_MAX_ITER
+    !   == Algorithm run ======
+            b = sys_least_squares(f5, df5, x, y, b0, F5_N, F5_N, ok)
+            if (.NOT. ok) then
+                b0 = rand_vector(F5_N, 0.8D0, 1.0D0)
+            else
+                exit
+            end if
+        end do
+        if (.NOT. ok) then
+            call error('Este método não convergiu.')
+        else
+            y = f5(x, b, F5_N, F5_N)
+        !   == Results ============    
+            call show_vector('b0', b0, F5_N)
+            call show_vector('b', b, F5_N)
+            call show_vector('x', x, F5_N)
+            call show_vector('y', y, F5_N)
+        !   =======================
+        end if
+    end subroutine
 end program main4

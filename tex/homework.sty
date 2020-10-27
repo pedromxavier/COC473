@@ -60,6 +60,18 @@
     {\Large\bfseries Questão \thequests\thisquest} \\[1ex]%%
 }
 
+\newcommand{\questx}[1][]{%%
+	\stepcounter{quests}
+	\setcounter{subquests}{0}
+	\setcounter{subsubquests}{0}
+	\ifx#1\empty
+	\def\thisquest{\unskip}%
+	\else
+	\def\thisquest{.: {\normalfont#1}}%
+	\fi
+	{\Large\bfseries Questão \thequests\thisquest} \\[1ex]%%
+}
+
 \newcommand{\subquest}[1][]{%%
 	\stepcounter{subquests}
 	\setcounter{subsubquests}{0}
@@ -80,33 +92,43 @@
 	\par {\bfseries-\hspace{-3pt} #1}
 }
 
-\def \@register {\space}
+\def \@register {~}
+\def \@notes {~}
 
 \newcommand{\register}[1]{%%
 	\def \@register {#1}
 }
 
+\newcommand{\notes}[1]{%%
+	\def \@notes {#1}
+}
+
 \renewcommand{\maketitle}{%%
 	\begin{center}
-		{\Huge\bfseries \@title\space} \\ \vspace{30pt}
-		{\huge \@author\space} \\ \vspace{5pt}
-		{\ttfamily\Large \@register\space} \\ \vspace{20pt}
-		{\Large \@date \space}
+		{\Huge\bfseries \@title\space} \\[30pt]
+		{\huge \@author\space} \\[5pt]
+		{\ttfamily\Large \@register\space} \\[20pt]
+		{\Large \@date \space}\\[100pt]
+		{%%
+			\begin{adjustwidth}{100pt}{100pt}%%
+			\@notes %%
+			\end{adjustwidth}\space %%
+		}%%
 	\end{center}
 	\pagebreak
 }
 
 %% Pgf - Tikz
-\tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=6pt]
+%% \tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=6pt]
 
-\pgfdeclarelayer{background}
-\pgfsetlayers{background,main}
-\tikzset{
-	expand bubble/.style={
-		preaction={draw},
-		draw,
-	},
-}
+%\pgfdeclarelayer{background}
+%\pgfsetlayers{background,main}
+%\tikzset{
+%	expand bubble/.style={
+%		preaction={draw},
+%		draw,
+%	},
+%}
 
 \newenvironment{fig}[1][\empty]{%% in-code
 	\ifx#1\empty
